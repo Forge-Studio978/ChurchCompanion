@@ -187,6 +187,80 @@ export async function registerRoutes(
     }
   });
 
+  app.get("/api/playlists", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const playlistsList = await storage.getPlaylists(userId);
+      res.json(playlistsList);
+    } catch (error) {
+      console.error("Error getting playlists:", error);
+      res.status(500).json({ message: "Failed to get playlists" });
+    }
+  });
+
+  app.get("/api/playlists/:id", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const id = parseInt(req.params.id);
+      const result = await storage.getPlaylistWithHymns(id, userId);
+      if (!result) {
+        return res.status(404).json({ message: "Playlist not found" });
+      }
+      res.json(result);
+    } catch (error) {
+      console.error("Error getting playlist:", error);
+      res.status(500).json({ message: "Failed to get playlist" });
+    }
+  });
+
+  app.post("/api/playlists", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const { title } = req.body;
+      const playlist = await storage.createPlaylist({ userId, title });
+      res.json(playlist);
+    } catch (error) {
+      console.error("Error creating playlist:", error);
+      res.status(500).json({ message: "Failed to create playlist" });
+    }
+  });
+
+  app.delete("/api/playlists/:id", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const id = parseInt(req.params.id);
+      await storage.deletePlaylist(id, userId);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error deleting playlist:", error);
+      res.status(500).json({ message: "Failed to delete playlist" });
+    }
+  });
+
+  app.post("/api/playlists/:id/hymns", isAuthenticated, async (req: any, res) => {
+    try {
+      const playlistId = parseInt(req.params.id);
+      const { hymnId } = req.body;
+      const item = await storage.addHymnToPlaylist({ playlistId, hymnId });
+      res.json(item);
+    } catch (error) {
+      console.error("Error adding hymn to playlist:", error);
+      res.status(500).json({ message: "Failed to add hymn to playlist" });
+    }
+  });
+
+  app.delete("/api/playlists/:id/hymns/:hymnId", isAuthenticated, async (req: any, res) => {
+    try {
+      const playlistId = parseInt(req.params.id);
+      const hymnId = parseInt(req.params.hymnId);
+      await storage.removeHymnFromPlaylist(playlistId, hymnId);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error removing hymn from playlist:", error);
+      res.status(500).json({ message: "Failed to remove hymn from playlist" });
+    }
+  });
+
   app.get("/api/sermons", isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;

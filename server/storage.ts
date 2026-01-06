@@ -34,8 +34,12 @@ export interface IStorage {
   deleteSavedHymn(hymnId: number, userId: string): Promise<void>;
   
   getPlaylists(userId: string): Promise<Playlist[]>;
+  getPlaylistWithHymns(playlistId: number, userId: string): Promise<{ playlist: Playlist; hymns: Hymn[] } | undefined>;
   createPlaylist(playlist: InsertPlaylist): Promise<Playlist>;
   deletePlaylist(id: number, userId: string): Promise<void>;
+  addHymnToPlaylist(item: InsertPlaylistItem): Promise<PlaylistItem>;
+  removeHymnFromPlaylist(playlistId: number, hymnId: number): Promise<void>;
+  reorderPlaylistItems(playlistId: number, items: { hymnId: number; orderIndex: number }[]): Promise<void>;
   
   getSermons(userId: string): Promise<Sermon[]>;
   getSermon(id: number, userId: string): Promise<Sermon | undefined>;
@@ -175,7 +179,21 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getPlaylists(userId: string): Promise<Playlist[]> {
-    return db.select().from(playlists).where(eq(playlists.userId, userId));
+    return db.select().from(playlists).where(eq(playlists.userId, userId)).orderBy(desc(playlists.createdAt));
+  }
+
+  async getPlaylistWithHymns(playlistId: number, userId: string): Promise<{ playlist: Playlist; hymns: Hymn[] } | undefined> {
+    const [playlist] = await db.select().from(playlists)
+      .where(and(eq(playlists.id, playlistId), eq(playlists.userId, userId)));
+    if (!playlist) return undefined;
+    
+    const items = await db.select()
+      .from(playlistItems)
+      .innerJoin(hymns, eq(playlistItems.hymnId, hymns.id))
+      .where(eq(playlistItems.playlistId, playlistId))
+      .orderBy(asc(playlistItems.orderIndex));
+    
+    return { playlist, hymns: items.map(i => i.hymns) };
   }
 
   async createPlaylist(playlist: InsertPlaylist): Promise<Playlist> {
@@ -184,7 +202,36 @@ export class DatabaseStorage implements IStorage {
   }
 
   async deletePlaylist(id: number, userId: string): Promise<void> {
+    await db.delete(playlistItems).where(eq(playlistItems.playlistId, id));
     await db.delete(playlists).where(and(eq(playlists.id, id), eq(playlists.userId, userId)));
+  }
+
+  async addHymnToPlaylist(item: InsertPlaylistItem): Promise<PlaylistItem> {
+    const existing = await db.select().from(playlistItems)
+      .where(and(eq(playlistItems.playlistId, item.playlistId), eq(playlistItems.hymnId, item.hymnId)));
+    if (existing.length > 0) return existing[0];
+    
+    const maxOrder = await db.select({ max: playlistItems.orderIndex })
+      .from(playlistItems)
+      .where(eq(playlistItems.playlistId, item.playlistId));
+    const orderIndex = (maxOrder[0]?.max || 0) + 1;
+    
+    const [newItem] = await db.insert(playlistItems).values({ ...item, orderIndex }).returning();
+    return newItem;
+  }
+
+  async removeHymnFromPlaylist(playlistId: number, hymnId: number): Promise<void> {
+    await db.delete(playlistItems).where(
+      and(eq(playlistItems.playlistId, playlistId), eq(playlistItems.hymnId, hymnId))
+    );
+  }
+
+  async reorderPlaylistItems(playlistId: number, items: { hymnId: number; orderIndex: number }[]): Promise<void> {
+    for (const item of items) {
+      await db.update(playlistItems)
+        .set({ orderIndex: item.orderIndex })
+        .where(and(eq(playlistItems.playlistId, playlistId), eq(playlistItems.hymnId, item.hymnId)));
+    }
   }
 
   async getSermons(userId: string): Promise<Sermon[]> {

@@ -1,0 +1,117 @@
+Build a cross-platform web + mobile app called “Christian Center.”
+
+MISSION
+A private, personal Christian study companion.
+Focus: Bible reading, hymn study, devotional books, and livestream engagement.
+No social features, no chat, no church hierarchy.
+
+PLATFORMS
+Mobile-first web app, later portable to iOS/Android.
+
+NAVIGATION TABS
+- Bible
+- Hymns
+- Library
+- Livestream Companion
+- Notes
+
+---------------------------------
+BIBLE READER
+---------------------------------
+• Multiple public-domain translations
+• Book → Chapter → Verse navigation
+• Highlight verses
+• Add notes embedded in verses
+• Save highlights + notes to Library → Highlights tab
+• Link notes back to exact passage
+• Search Bible by keywords
+• Adjustable font size
+• Light/Dark mode
+• Offline caching
+
+---------------------------------
+HYMNAL LIBRARY
+---------------------------------
+• Public domain hymns only
+• Search by title, first line, tag
+• Browse alphabetically or by category
+• View full lyrics
+• Save favorites
+• Create lyric-only playlists
+• Optional audio (user-uploaded or public domain)
+• Playlist playback with lyrics display
+• Minimalist audio player (play/pause, seek, duration)
+
+---------------------------------
+LIVESTREAM COMPANION
+---------------------------------
+• Users can save livestream links (YouTube/Vimeo/embed)
+• Open livestream in viewer
+• Notes panel beside video (desktop) or below (mobile)
+• Add timestamped notes
+• Detect referenced Bible verses → show in dedicated section
+• Detect hymns → show lyrics if in database; if not, show transcription
+• Notes + highlights saved to Library with timestamp + content link
+
+---------------------------------
+DEVOTIONAL BOOKS
+---------------------------------
+• Users can upload PDF or EPUB
+• Preloaded books available
+• Book reader inside app
+• Add notes & highlight text similar to Bible
+• Notes saved to Library with reference to book/page
+
+---------------------------------
+LIBRARY
+---------------------------------
+• Highlights (Bible + Books)
+• Hymns & Playlists
+• Devotional Books
+• Livestream Companion entries + notes
+
+---------------------------------
+PERSONAL NOTES SYSTEM
+---------------------------------
+• Attach notes to Bible verses, Hymns, Books, Livestream timestamps
+• Rich-text preferred
+• Searchable
+• Contextual links
+
+---------------------------------
+DESIGN PRINCIPLES
+---------------------------------
+• Peaceful, minimal, readable
+• Light + Dark mode
+• Serif for headings (hymn/book feel)
+• Sans-serif for reading
+• Accent colors: soft gold / deep navy
+
+---------------------------------
+DATABASE OBJECTS
+---------------------------------
+Users
+BibleVersions
+BibleVerses
+Highlights
+Hymns
+HymnAudio
+Playlists
+PlaylistItems
+DevotionalBooks
+BookNotes
+Livestreams
+LivestreamNotes
+
+---------------------------------
+SECURITY & PRIVACY
+---------------------------------
+• All data private
+• No public sharing
+
+---------------------------------
+GOALS
+---------------------------------
+• Private, distraction-free spiritual companion
+• Focus on Bible + Hymns + Devotionals + Livestream notes
+• Simple, buildable MVP

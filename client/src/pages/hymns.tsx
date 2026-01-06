@@ -12,13 +12,21 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogFooter,
 } from "@/components/ui/dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useAuth } from "@/hooks/use-auth";
-import { Search, Heart, ChevronLeft, Music } from "lucide-react";
+import { Search, Heart, Music, Plus, ListMusic, MoreVertical } from "lucide-react";
 import { cn } from "@/lib/utils";
-import type { Hymn, SavedHymn } from "@shared/schema";
+import type { Hymn, SavedHymn, Playlist } from "@shared/schema";
 
 export default function Hymns() {
   const { isAuthenticated } = useAuth();
@@ -26,6 +34,8 @@ export default function Hymns() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedHymn, setSelectedHymn] = useState<Hymn | null>(null);
   const [selectedTag, setSelectedTag] = useState<string | null>(null);
+  const [createPlaylistOpen, setCreatePlaylistOpen] = useState(false);
+  const [newPlaylistTitle, setNewPlaylistTitle] = useState("");
 
   const { data: hymns = [], isLoading } = useQuery<Hymn[]>({
     queryKey: ["/api/hymns", searchQuery, selectedTag],
@@ -33,6 +43,11 @@ export default function Hymns() {
 
   const { data: savedHymns = [] } = useQuery<SavedHymn[]>({
     queryKey: ["/api/saved-hymns"],
+    enabled: isAuthenticated,
+  });
+
+  const { data: playlists = [] } = useQuery<Playlist[]>({
+    queryKey: ["/api/playlists"],
     enabled: isAuthenticated,
   });
 
@@ -50,6 +65,30 @@ export default function Hymns() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/saved-hymns"] });
+    },
+  });
+
+  const createPlaylistMutation = useMutation({
+    mutationFn: async (title: string) => {
+      return apiRequest("POST", "/api/playlists", { title });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/playlists"] });
+      setCreatePlaylistOpen(false);
+      setNewPlaylistTitle("");
+      toast({ title: "Playlist created" });
+    },
+  });
+
+  const addToPlaylistMutation = useMutation({
+    mutationFn: async ({ playlistId, hymnId }: { playlistId: number; hymnId: number }) => {
+      return apiRequest("POST", `/api/playlists/${playlistId}/hymns`, { hymnId });
+    },
+    onSuccess: () => {
+      toast({ title: "Hymn added to playlist" });
+    },
+    onError: () => {
+      toast({ title: "Failed to add to playlist", variant: "destructive" });
     },
   });
 
@@ -77,7 +116,19 @@ export default function Hymns() {
     <Layout>
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         <div className="mb-6">
-          <h1 className="font-serif text-2xl md:text-3xl font-semibold mb-4">Hymnal Library</h1>
+          <div className="flex items-center justify-between gap-4 mb-4 flex-wrap">
+            <h1 className="font-serif text-2xl md:text-3xl font-semibold">Hymnal Library</h1>
+            {isAuthenticated && (
+              <Button 
+                variant="outline" 
+                onClick={() => setCreatePlaylistOpen(true)}
+                data-testid="button-create-playlist"
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                New Playlist
+              </Button>
+            )}
+          </div>
           
           <div className="flex flex-col gap-4">
             <div className="relative">
@@ -168,22 +219,63 @@ export default function Hymns() {
                       )}
                     </div>
                     {isAuthenticated && (
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          saveMutation.mutate(hymn.id);
-                        }}
-                        data-testid={`save-hymn-${hymn.id}`}
-                      >
-                        <Heart
-                          className={cn(
-                            "h-5 w-5 transition-colors",
-                            isHymnSaved(hymn.id) && "fill-red-500 text-red-500"
-                          )}
-                        />
-                      </Button>
+                      <div className="flex items-center gap-1">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            saveMutation.mutate(hymn.id);
+                          }}
+                          data-testid={`save-hymn-${hymn.id}`}
+                        >
+                          <Heart
+                            className={cn(
+                              "h-5 w-5 transition-colors",
+                              isHymnSaved(hymn.id) && "fill-red-500 text-red-500"
+                            )}
+                          />
+                        </Button>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
+                            <Button variant="ghost" size="icon" data-testid={`menu-hymn-${hymn.id}`}>
+                              <MoreVertical className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            {playlists.length > 0 ? (
+                              <>
+                                <div className="px-2 py-1.5 text-xs font-medium text-muted-foreground">
+                                  Add to Playlist
+                                </div>
+                                {playlists.map((playlist) => (
+                                  <DropdownMenuItem
+                                    key={playlist.id}
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      addToPlaylistMutation.mutate({ playlistId: playlist.id, hymnId: hymn.id });
+                                    }}
+                                    data-testid={`add-to-playlist-${playlist.id}`}
+                                  >
+                                    <ListMusic className="h-4 w-4 mr-2" />
+                                    {playlist.title}
+                                  </DropdownMenuItem>
+                                ))}
+                                <DropdownMenuSeparator />
+                              </>
+                            ) : null}
+                            <DropdownMenuItem
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setCreatePlaylistOpen(true);
+                              }}
+                            >
+                              <Plus className="h-4 w-4 mr-2" />
+                              New Playlist
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </div>
                     )}
                   </div>
                 </CardContent>
@@ -227,6 +319,34 @@ export default function Hymns() {
                 {selectedHymn && formatLyrics(selectedHymn.lyrics)}
               </div>
             </ScrollArea>
+          </DialogContent>
+        </Dialog>
+
+        <Dialog open={createPlaylistOpen} onOpenChange={setCreatePlaylistOpen}>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle>Create New Playlist</DialogTitle>
+            </DialogHeader>
+            <div className="py-4">
+              <Input
+                placeholder="Playlist name"
+                value={newPlaylistTitle}
+                onChange={(e) => setNewPlaylistTitle(e.target.value)}
+                data-testid="input-playlist-title"
+              />
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setCreatePlaylistOpen(false)}>
+                Cancel
+              </Button>
+              <Button
+                onClick={() => createPlaylistMutation.mutate(newPlaylistTitle)}
+                disabled={!newPlaylistTitle.trim() || createPlaylistMutation.isPending}
+                data-testid="button-save-playlist"
+              >
+                {createPlaylistMutation.isPending ? "Creating..." : "Create"}
+              </Button>
+            </DialogFooter>
           </DialogContent>
         </Dialog>
       </div>

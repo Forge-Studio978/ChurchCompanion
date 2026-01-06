@@ -11,7 +11,8 @@ import Home from "@/pages/home";
 import Bible from "@/pages/bible";
 import Hymns from "@/pages/hymns";
 import LibraryPage from "@/pages/library";
-import Sermons from "@/pages/sermons";
+import LivestreamCompanion from "@/pages/livestream";
+import NotesPage from "@/pages/notes";
 import Settings from "@/pages/settings";
 
 function Router() {
@@ -36,7 +37,8 @@ function Router() {
       <Route path="/bible" component={Bible} />
       <Route path="/hymns" component={Hymns} />
       <Route path="/library" component={LibraryPage} />
-      <Route path="/sermons" component={Sermons} />
+      <Route path="/livestream" component={LivestreamCompanion} />
+      <Route path="/notes" component={NotesPage} />
       <Route path="/settings" component={Settings} />
       <Route component={NotFound} />
     </Switch>
