@@ -415,18 +415,38 @@ export async function registerRoutes(
       if (!query || query.length < 2) {
         return res.json({ results: [] });
       }
-      const response = await fetch(`https://gutendex.com/books?search=${encodeURIComponent(query)}&languages=en&topic=christianity,religion,devotional,prayer`);
+      
+      // Use gutendex.com API - the official Project Gutenberg catalog API
+      // Search without topic filter to get broader results, filter by English language
+      const searchUrl = `https://gutendex.com/books?search=${encodeURIComponent(query)}&languages=en`;
+      const response = await fetch(searchUrl);
+      
       if (!response.ok) {
         throw new Error("Gutenberg search failed");
       }
+      
       const data = await response.json();
-      const results = data.results.slice(0, 20).map((book: any) => ({
-        gutenbergId: String(book.id),
-        title: book.title,
-        author: book.authors?.[0]?.name || "Unknown Author",
-        subjects: book.subjects?.slice(0, 3) || [],
-        downloadUrl: book.formats?.["text/plain; charset=utf-8"] || book.formats?.["text/plain"] || null,
-      }));
+      
+      // Map results and find the best text download URL
+      const results = data.results.slice(0, 25).map((book: any) => {
+        // Prefer UTF-8 plain text, fallback to other text formats
+        const formats = book.formats || {};
+        const downloadUrl = 
+          formats["text/plain; charset=utf-8"] ||
+          formats["text/plain; charset=us-ascii"] ||
+          formats["text/plain"] ||
+          null;
+        
+        return {
+          gutenbergId: String(book.id),
+          title: book.title,
+          author: book.authors?.[0]?.name || "Unknown Author",
+          subjects: book.subjects?.slice(0, 5) || [],
+          downloadUrl,
+          languages: book.languages || [],
+        };
+      }).filter((book: any) => book.downloadUrl); // Only include books with text available
+      
       res.json({ results });
     } catch (error) {
       console.error("Error searching Gutenberg:", error);
