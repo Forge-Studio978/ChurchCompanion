@@ -1,11 +1,13 @@
 import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
+import { useRoute, useLocation } from "wouter";
 import { Layout } from "@/components/layout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Textarea } from "@/components/ui/textarea";
+import { Badge } from "@/components/ui/badge";
 import {
   Dialog,
   DialogContent,
@@ -17,29 +19,28 @@ import {
 import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
-import { Book, ChevronLeft, ChevronRight, BookOpen, List, Highlighter, Trash2, MessageSquare } from "lucide-react";
+import { ChevronLeft, ChevronRight, BookOpen, List, Highlighter, Trash2 } from "lucide-react";
 import type { DevotionalBook, DevotionalChapter, BookHighlight } from "@shared/schema";
 
-export default function Books() {
+export default function BookReader() {
   const { isAuthenticated } = useAuth();
   const { toast } = useToast();
-  const [selectedBookId, setSelectedBookId] = useState<number | null>(null);
+  const [, navigate] = useLocation();
+  const [, params] = useRoute("/books/:id");
+  const bookId = params?.id ? parseInt(params.id) : null;
+
   const [selectedChapterId, setSelectedChapterId] = useState<number | null>(null);
   const [showChapterList, setShowChapterList] = useState(false);
   const [selectedText, setSelectedText] = useState("");
   const [showHighlightDialog, setShowHighlightDialog] = useState(false);
   const [highlightNote, setHighlightNote] = useState("");
 
-  const { data: books = [], isLoading } = useQuery<DevotionalBook[]>({
-    queryKey: ["/api/devotional-books"],
-  });
-
   const { data: bookData, isLoading: isLoadingBook } = useQuery<{
     book: DevotionalBook;
     chapters: DevotionalChapter[];
   }>({
-    queryKey: ["/api/devotional-books", selectedBookId],
-    enabled: !!selectedBookId,
+    queryKey: ["/api/devotional-books", bookId],
+    enabled: !!bookId,
   });
 
   const { data: chapter, isLoading: isLoadingChapter } = useQuery<DevotionalChapter>({
@@ -48,8 +49,8 @@ export default function Books() {
   });
 
   const { data: progress } = useQuery<{ currentChapterId: number } | null>({
-    queryKey: ["/api/book-progress", selectedBookId],
-    enabled: !!selectedBookId && isAuthenticated,
+    queryKey: ["/api/book-progress", bookId],
+    enabled: !!bookId && isAuthenticated,
   });
 
   const { data: highlights = [] } = useQuery<BookHighlight[]>({
@@ -68,7 +69,7 @@ export default function Books() {
       return apiRequest("POST", "/api/book-progress", data);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/book-progress", selectedBookId] });
+      queryClient.invalidateQueries({ queryKey: ["/api/book-progress", bookId] });
     },
   });
 
@@ -98,16 +99,11 @@ export default function Books() {
     },
   });
 
-  const handleSelectBook = (bookId: number) => {
-    setSelectedBookId(bookId);
-    setSelectedChapterId(null);
-  };
-
   const handleSelectChapter = (chapterId: number) => {
     setSelectedChapterId(chapterId);
     setShowChapterList(false);
-    if (selectedBookId && isAuthenticated) {
-      updateProgressMutation.mutate({ bookId: selectedBookId, currentChapterId: chapterId });
+    if (bookId && isAuthenticated) {
+      updateProgressMutation.mutate({ bookId, currentChapterId: chapterId });
     }
   };
 
@@ -115,7 +111,7 @@ export default function Books() {
     if (selectedChapterId) {
       setSelectedChapterId(null);
     } else {
-      setSelectedBookId(null);
+      navigate("/library");
     }
   };
 
@@ -165,6 +161,35 @@ export default function Books() {
       </p>
     ));
   };
+
+  if (!bookId) {
+    return (
+      <Layout>
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12 text-center">
+          <BookOpen className="h-16 w-16 mx-auto mb-4 text-muted-foreground" />
+          <h1 className="font-serif text-2xl font-semibold mb-2">Book not found</h1>
+          <Button onClick={() => navigate("/library")} data-testid="button-back-library">
+            Back to Library
+          </Button>
+        </div>
+      </Layout>
+    );
+  }
+
+  if (isLoadingBook) {
+    return (
+      <Layout>
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+          <Skeleton className="h-8 w-48 mb-6" />
+          <div className="space-y-4">
+            {Array.from({ length: 5 }).map((_, i) => (
+              <Skeleton key={i} className="h-20 w-full" />
+            ))}
+          </div>
+        </div>
+      </Layout>
+    );
+  }
 
   if (selectedChapterId && chapter) {
     const chapterIndex = getCurrentChapterIndex();
@@ -228,22 +253,21 @@ export default function Books() {
 
           {isAuthenticated && highlights.length > 0 && (
             <div className="mt-8 pt-6 border-t">
-              <h3 className="font-semibold mb-4 flex items-center gap-2">
-                <Highlighter className="h-4 w-4 text-primary" />
-                Your Highlights ({highlights.length})
+              <h3 className="font-medium mb-4 flex items-center gap-2">
+                <Highlighter className="h-4 w-4" />
+                Your Highlights
               </h3>
               <div className="space-y-3">
                 {highlights.map((hl) => (
-                  <Card key={hl.id} className="bg-primary/5 border-primary/20">
+                  <Card key={hl.id} data-testid={`highlight-${hl.id}`}>
                     <CardContent className="p-4">
-                      <div className="flex items-start justify-between gap-3">
-                        <div className="flex-1 min-w-0">
-                          <p className="italic text-muted-foreground mb-2">"{hl.highlightedText}"</p>
+                      <div className="flex items-start justify-between gap-4">
+                        <div className="flex-1">
+                          <p className="font-serif italic text-muted-foreground">
+                            "{hl.highlightedText}"
+                          </p>
                           {hl.note && (
-                            <p className="text-sm flex items-start gap-2">
-                              <MessageSquare className="h-4 w-4 mt-0.5 shrink-0" />
-                              {hl.note}
-                            </p>
+                            <p className="mt-2 text-sm">{hl.note}</p>
                           )}
                         </div>
                         <Button
@@ -367,13 +391,13 @@ export default function Books() {
     );
   }
 
-  if (selectedBookId && bookData) {
+  if (bookData) {
     return (
       <Layout>
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
           <Button variant="ghost" onClick={handleBack} className="mb-6" data-testid="button-back">
             <ChevronLeft className="h-4 w-4 mr-1" />
-            All Books
+            Library
           </Button>
 
           <div className="mb-8">
@@ -400,104 +424,36 @@ export default function Books() {
             )}
           </div>
 
-          {isLoadingBook ? (
-            <div className="space-y-3">
-              {Array.from({ length: 5 }).map((_, i) => (
-                <Card key={i}>
-                  <CardContent className="p-4">
-                    <Skeleton className="h-6 w-3/4" />
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          ) : bookData.chapters.length === 0 ? (
-            <Card>
-              <CardContent className="p-12 text-center">
-                <BookOpen className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
-                <p className="text-muted-foreground">No chapters available yet</p>
-              </CardContent>
-            </Card>
-          ) : (
-            <div className="space-y-3">
-              {bookData.chapters.map((ch, i) => (
-                <Card
-                  key={ch.id}
-                  className="cursor-pointer transition-all hover:shadow-md hover:border-primary/30"
-                  onClick={() => handleSelectChapter(ch.id)}
-                  data-testid={`chapter-card-${ch.id}`}
-                >
-                  <CardContent className="p-4 flex items-center gap-4">
-                    <span className="text-2xl font-serif text-muted-foreground w-10 text-center">
-                      {i + 1}
-                    </span>
-                    <div className="flex-1 min-w-0">
-                      <h3 className="font-semibold truncate">{ch.title}</h3>
+          <h2 className="font-semibold mb-4">Chapters</h2>
+          <div className="space-y-2">
+            {bookData.chapters.map((ch, i) => (
+              <Card
+                key={ch.id}
+                className="hover-elevate cursor-pointer"
+                onClick={() => handleSelectChapter(ch.id)}
+                data-testid={`chapter-card-${ch.id}`}
+              >
+                <CardContent className="p-4">
+                  <div className="flex items-center justify-between gap-4">
+                    <div className="flex items-center gap-3">
+                      <span className="text-muted-foreground text-sm w-6">{i + 1}.</span>
+                      <span className="font-medium">{ch.title}</span>
                     </div>
-                    {progress?.currentChapterId === ch.id && (
-                      <span className="text-xs bg-primary/10 text-primary px-2 py-1 rounded-full shrink-0">
-                        Last read
-                      </span>
-                    )}
-                    <ChevronRight className="h-5 w-5 text-muted-foreground shrink-0" />
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          )}
+                    <div className="flex items-center gap-2">
+                      {progress?.currentChapterId === ch.id && (
+                        <Badge variant="outline" className="text-xs">Last read</Badge>
+                      )}
+                      <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
         </div>
       </Layout>
     );
   }
 
-  return (
-    <Layout>
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        <h1 className="font-serif text-2xl md:text-3xl font-semibold mb-6">Devotional Books</h1>
-
-        {isLoading ? (
-          <div className="grid gap-6 md:grid-cols-2">
-            {Array.from({ length: 4 }).map((_, i) => (
-              <Card key={i}>
-                <CardContent className="p-6">
-                  <Skeleton className="h-24 w-full mb-4" />
-                  <Skeleton className="h-6 w-3/4" />
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        ) : books.length === 0 ? (
-          <Card>
-            <CardContent className="p-12 text-center">
-              <Book className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
-              <p className="text-muted-foreground">No devotional books available yet</p>
-            </CardContent>
-          </Card>
-        ) : (
-          <div className="grid gap-6 md:grid-cols-2">
-            {books.map((book) => (
-              <Card
-                key={book.id}
-                className="cursor-pointer transition-all hover:shadow-md hover:border-primary/30"
-                onClick={() => handleSelectBook(book.id)}
-                data-testid={`book-card-${book.id}`}
-              >
-                <CardContent className="p-6">
-                  <div
-                    className="h-32 rounded-md mb-4 flex items-center justify-center"
-                    style={{ backgroundColor: book.coverColor || "#2c4a6e" }}
-                  >
-                    <Book className="h-12 w-12 text-white/80" />
-                  </div>
-                  <h3 className="font-serif text-lg font-semibold mb-1">{book.title}</h3>
-                  {book.author && (
-                    <p className="text-sm text-muted-foreground">{book.author}</p>
-                  )}
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        )}
-      </div>
-    </Layout>
-  );
+  return null;
 }

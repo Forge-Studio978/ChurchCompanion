@@ -31,7 +31,7 @@ const quickNavItems = [
     color: "bg-amber-500/10 text-amber-600 dark:text-amber-400",
   },
   {
-    path: "/sermons",
+    path: "/livestream",
     label: "Livestream",
     description: "Watch and take notes",
     icon: Mic,

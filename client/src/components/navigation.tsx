@@ -1,15 +1,13 @@
 import { Link, useLocation } from "wouter";
-import { Book, Music, Library, Radio, StickyNote, Home, BookOpen } from "lucide-react";
+import { Book, Music, Library, Radio, Home } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const navItems = [
   { path: "/", label: "Home", icon: Home },
   { path: "/bible", label: "Bible", icon: Book },
   { path: "/hymns", label: "Hymns", icon: Music },
-  { path: "/books", label: "Devotionals", icon: BookOpen },
   { path: "/library", label: "Library", icon: Library },
   { path: "/livestream", label: "Livestream", icon: Radio },
-  { path: "/notes", label: "Notes", icon: StickyNote },
 ];
 
 export function BottomNav() {
