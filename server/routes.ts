@@ -386,13 +386,138 @@ export async function registerRoutes(
     }
   });
 
-  app.get("/api/devotional-books", async (_req, res) => {
+  app.get("/api/devotional-books", isAuthenticated, async (req: any, res) => {
     try {
-      const books = await storage.getDevotionalBooks();
+      const userId = req.user.claims.sub;
+      const books = await storage.getAllUserBooks(userId);
       res.json(books);
     } catch (error) {
       console.error("Error getting devotional books:", error);
       res.status(500).json({ message: "Failed to get devotional books" });
+    }
+  });
+
+  app.delete("/api/devotional-books/:id", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const id = parseInt(req.params.id);
+      await storage.deleteDevotionalBook(id, userId);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error deleting devotional book:", error);
+      res.status(500).json({ message: "Failed to delete devotional book" });
+    }
+  });
+
+  app.get("/api/gutenberg/search", async (req, res) => {
+    try {
+      const query = req.query.q as string;
+      if (!query || query.length < 2) {
+        return res.json({ results: [] });
+      }
+      const response = await fetch(`https://gutendex.com/books?search=${encodeURIComponent(query)}&languages=en&topic=christianity,religion,devotional,prayer`);
+      if (!response.ok) {
+        throw new Error("Gutenberg search failed");
+      }
+      const data = await response.json();
+      const results = data.results.slice(0, 20).map((book: any) => ({
+        gutenbergId: String(book.id),
+        title: book.title,
+        author: book.authors?.[0]?.name || "Unknown Author",
+        subjects: book.subjects?.slice(0, 3) || [],
+        downloadUrl: book.formats?.["text/plain; charset=utf-8"] || book.formats?.["text/plain"] || null,
+      }));
+      res.json({ results });
+    } catch (error) {
+      console.error("Error searching Gutenberg:", error);
+      res.status(500).json({ message: "Failed to search Gutenberg" });
+    }
+  });
+
+  app.post("/api/gutenberg/import", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const { gutenbergId, title, author, downloadUrl } = req.body;
+      
+      if (!downloadUrl) {
+        return res.status(400).json({ message: "No text version available for this book" });
+      }
+
+      const textResponse = await fetch(downloadUrl);
+      if (!textResponse.ok) {
+        throw new Error("Failed to download book text");
+      }
+      
+      let fullText = await textResponse.text();
+      
+      if (fullText.length > 2000000) {
+        fullText = fullText.substring(0, 2000000);
+      }
+      
+      const startMatch = fullText.match(/\*\*\*\s*START OF (THE|THIS) PROJECT GUTENBERG.*?\*\*\*/i);
+      const endMatch = fullText.match(/\*\*\*\s*END OF (THE|THIS) PROJECT GUTENBERG.*?\*\*\*/i);
+      
+      if (startMatch && endMatch) {
+        const startIdx = startMatch.index! + startMatch[0].length;
+        const endIdx = endMatch.index!;
+        fullText = fullText.substring(startIdx, endIdx).trim();
+      }
+      
+      const chapterPattern = /(?:^|\n)(CHAPTER\s+[IVXLCDM\d]+[.:\s].*?|Chapter\s+\d+[.:\s].*?)(?=\n)/gi;
+      const chapterMatches = [...fullText.matchAll(chapterPattern)];
+      
+      let chapters: { title: string; content: string }[] = [];
+      
+      if (chapterMatches.length >= 3) {
+        for (let i = 0; i < chapterMatches.length; i++) {
+          const match = chapterMatches[i];
+          const nextMatch = chapterMatches[i + 1];
+          const chapterTitle = match[1].trim();
+          const startIdx = match.index! + match[0].length;
+          const endIdx = nextMatch ? nextMatch.index! : fullText.length;
+          const content = fullText.substring(startIdx, endIdx).trim();
+          if (content.length > 100) {
+            chapters.push({ title: chapterTitle, content });
+          }
+        }
+      }
+      
+      if (chapters.length < 3) {
+        const paragraphs = fullText.split(/\n\s*\n/).filter(p => p.trim().length > 50);
+        const chunkSize = Math.ceil(paragraphs.length / 10);
+        chapters = [];
+        for (let i = 0; i < 10 && i * chunkSize < paragraphs.length; i++) {
+          const chunk = paragraphs.slice(i * chunkSize, (i + 1) * chunkSize);
+          chapters.push({
+            title: `Part ${i + 1}`,
+            content: chunk.join("\n\n"),
+          });
+        }
+      }
+      
+      const book = await storage.insertDevotionalBook({
+        title,
+        author,
+        description: `Imported from Project Gutenberg`,
+        isPublic: false,
+        userId,
+        source: "gutenberg",
+        gutenbergId,
+      });
+      
+      for (let i = 0; i < chapters.length; i++) {
+        await storage.insertDevotionalChapter({
+          bookId: book.id,
+          title: chapters[i].title,
+          content: chapters[i].content,
+          orderIndex: i,
+        });
+      }
+      
+      res.json({ success: true, book });
+    } catch (error) {
+      console.error("Error importing Gutenberg book:", error);
+      res.status(500).json({ message: "Failed to import book" });
     }
   });
 
@@ -464,8 +589,8 @@ export async function registerRoutes(
   app.post("/api/book-highlights", isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
-      const { chapterId, startOffset, endOffset, color, note } = req.body;
-      const highlight = await storage.createBookHighlight({ userId, chapterId, startOffset, endOffset, color, note });
+      const { chapterId, highlightedText, color, note } = req.body;
+      const highlight = await storage.createBookHighlight({ userId, chapterId, highlightedText, color: color || "yellow", note });
       res.json(highlight);
     } catch (error) {
       console.error("Error creating book highlight:", error);

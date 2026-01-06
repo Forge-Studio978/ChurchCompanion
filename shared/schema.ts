@@ -98,6 +98,9 @@ export const devotionalBooks = pgTable("devotional_books", {
   description: text("description"),
   coverColor: varchar("cover_color", { length: 20 }).default("#2c4a6e"),
   isPublic: boolean("is_public").default(true),
+  userId: varchar("user_id"),
+  source: varchar("source", { length: 20 }).default("seeded"),
+  gutenbergId: varchar("gutenberg_id", { length: 50 }),
 });
 
 export const devotionalChapters = pgTable("devotional_chapters", {
@@ -120,8 +123,7 @@ export const bookHighlights = pgTable("book_highlights", {
   id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
   userId: varchar("user_id").notNull(),
   chapterId: integer("chapter_id").notNull(),
-  startOffset: integer("start_offset").notNull(),
-  endOffset: integer("end_offset").notNull(),
+  highlightedText: text("highlighted_text").notNull(),
   color: varchar("color", { length: 20 }).notNull().default("yellow"),
   note: text("note"),
   createdAt: timestamp("created_at").defaultNow(),

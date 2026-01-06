@@ -348,9 +348,24 @@ export class DatabaseStorage implements IStorage {
     return db.select().from(devotionalBooks).where(eq(devotionalBooks.isPublic, true));
   }
 
+  async getUserDevotionalBooks(userId: string): Promise<DevotionalBook[]> {
+    return db.select().from(devotionalBooks).where(eq(devotionalBooks.userId, userId));
+  }
+
+  async getAllUserBooks(userId: string): Promise<DevotionalBook[]> {
+    return db.select().from(devotionalBooks)
+      .where(sql`${devotionalBooks.isPublic} = true OR ${devotionalBooks.userId} = ${userId}`);
+  }
+
   async getDevotionalBook(id: number): Promise<DevotionalBook | undefined> {
     const [book] = await db.select().from(devotionalBooks).where(eq(devotionalBooks.id, id));
     return book;
+  }
+
+  async deleteDevotionalBook(id: number, userId: string): Promise<void> {
+    await db.delete(devotionalChapters).where(eq(devotionalChapters.bookId, id));
+    await db.delete(bookProgress).where(eq(bookProgress.bookId, id));
+    await db.delete(devotionalBooks).where(and(eq(devotionalBooks.id, id), eq(devotionalBooks.userId, userId)));
   }
 
   async getDevotionalChapters(bookId: number): Promise<DevotionalChapter[]> {
@@ -396,7 +411,7 @@ export class DatabaseStorage implements IStorage {
   async getBookHighlights(userId: string, chapterId: number): Promise<BookHighlight[]> {
     return db.select().from(bookHighlights)
       .where(and(eq(bookHighlights.userId, userId), eq(bookHighlights.chapterId, chapterId)))
-      .orderBy(asc(bookHighlights.startOffset));
+      .orderBy(desc(bookHighlights.createdAt));
   }
 
   async createBookHighlight(highlight: InsertBookHighlight): Promise<BookHighlight> {
