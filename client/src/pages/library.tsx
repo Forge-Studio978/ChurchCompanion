@@ -326,7 +326,7 @@ export default function LibraryPage() {
               <EmptyState
                 icon={FileText}
                 title="No notes"
-                description="Add notes while reading or during sermons"
+                description="Add notes while reading or watching"
               />
             ) : (
               <div className="space-y-3">

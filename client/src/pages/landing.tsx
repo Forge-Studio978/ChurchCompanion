@@ -15,8 +15,8 @@ const features = [
   },
   {
     icon: FileText,
-    title: "Sermon Notes",
-    description: "Take notes during sermons and attach Scripture references",
+    title: "Livestream Companion",
+    description: "Take notes while watching and attach Scripture references",
   },
   {
     icon: Heart,
@@ -38,7 +38,7 @@ export default function Landing() {
           </h1>
           <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto mb-8 leading-relaxed">
             Your personal worship companion. Read Scripture, explore hymns, 
-            take sermon notes, and deepen your faith in a calm, focused space.
+            take notes while watching, and deepen your faith in a calm, focused space.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Button size="lg" asChild className="text-base px-8" data-testid="button-get-started">

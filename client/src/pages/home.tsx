@@ -32,8 +32,8 @@ const quickNavItems = [
   },
   {
     path: "/sermons",
-    label: "Sermons",
-    description: "Notes and study tools",
+    label: "Livestream",
+    description: "Watch and take notes",
     icon: Mic,
     color: "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400",
   },

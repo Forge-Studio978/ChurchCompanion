@@ -2,13 +2,13 @@
 
 ## Overview
 
-Christian Center is a personal Christian worship and study companion web application. It provides a calm, focused space for Bible reading, hymn exploration, sermon notes, and spiritual practice. The app is designed as a mobile-first web application with no social features—purely private spiritual tools for individual use.
+Christian Center is a personal Christian worship and study companion web application. It provides a calm, focused space for Bible reading, hymn exploration, livestream notes, and spiritual practice. The app is designed as a mobile-first web application with no social features—purely private spiritual tools for individual use.
 
 **Core Features:**
 - Bible Reader with KJV translation, highlighting, and verse notes
 - Hymnal Library with public domain hymns, search, and favorites
 - Personal Library for saved verses, hymns, and notes
-- Sermon/Livestream Companion with note-taking
+- Livestream Companion with note-taking
 - Light/Dark theme support
 
 ## User Preferences

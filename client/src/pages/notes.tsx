@@ -184,7 +184,7 @@ export default function NotesPage() {
                   <Radio className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
                   <h3 className="font-medium mb-2">No livestream notes</h3>
                   <p className="text-muted-foreground mb-4">
-                    Take notes while watching sermons
+                    Take notes while watching livestreams
                   </p>
                   <Button asChild>
                     <Link href="/livestream">Watch Livestream</Link>

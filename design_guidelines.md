@@ -45,7 +45,7 @@
 ## Component Library
 
 **Navigation**:
-- Bottom tab bar (mobile): Bible | Hymns | Library | Sermons icons with labels
+- Bottom tab bar (mobile): Bible | Hymns | Library | Livestream icons with labels
 - Top navigation (desktop): Horizontal menu with user profile dropdown (right-aligned)
 - Minimal, always accessible, no hamburger menus
 
@@ -79,7 +79,7 @@
 - Lyrics: Verses clearly separated with spacing (mb-6 between verses)
 - Audio player: Fixed bottom when playing (minimal controls: play/pause, progress bar, time)
 
-**Sermon Notes Panel**:
+**Livestream Notes Panel**:
 - Desktop: Split screen (60% video/audio, 40% notes)
 - Mobile: Tabs switching between media and notes
 - Timestamp button visible in notes textarea for adding timestamps
@@ -102,7 +102,7 @@ No large hero image. This is a utility app, not marketing.
 
 **Iconography**:
 - Use Heroicons (outline style for navigation, solid for active states)
-- Spiritual icons: Book (Bible), Music note (Hymns), Folder (Library), Mic (Sermons)
+- Spiritual icons: Book (Bible), Music note (Hymns), Folder (Library), Radio (Livestream)
 
 **Elevation & Depth**:
 - Minimal shadows (shadow-sm for cards, shadow-md for modals)
