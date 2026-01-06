@@ -1,0 +1,71 @@
+import { Link, useLocation } from "wouter";
+import { Book, Music, Library, Mic, Home } from "lucide-react";
+import { cn } from "@/lib/utils";
+
+const navItems = [
+  { path: "/", label: "Home", icon: Home },
+  { path: "/bible", label: "Bible", icon: Book },
+  { path: "/hymns", label: "Hymns", icon: Music },
+  { path: "/library", label: "Library", icon: Library },
+  { path: "/sermons", label: "Sermons", icon: Mic },
+];
+
+export function BottomNav() {
+  const [location] = useLocation();
+
+  return (
+    <nav className="fixed bottom-0 left-0 right-0 z-50 bg-card border-t border-border md:hidden">
+      <div className="flex items-center justify-around py-2">
+        {navItems.map((item) => {
+          const isActive = location === item.path || 
+            (item.path !== "/" && location.startsWith(item.path));
+          return (
+            <Link key={item.path} href={item.path}>
+              <button
+                className={cn(
+                  "flex flex-col items-center gap-1 px-4 py-2 rounded-lg transition-colors",
+                  isActive 
+                    ? "text-primary" 
+                    : "text-muted-foreground hover:text-foreground"
+                )}
+                data-testid={`nav-${item.label.toLowerCase()}`}
+              >
+                <item.icon className="h-5 w-5" />
+                <span className="text-xs font-medium">{item.label}</span>
+              </button>
+            </Link>
+          );
+        })}
+      </div>
+    </nav>
+  );
+}
+
+export function TopNav() {
+  const [location] = useLocation();
+
+  return (
+    <nav className="hidden md:flex items-center gap-1">
+      {navItems.map((item) => {
+        const isActive = location === item.path || 
+          (item.path !== "/" && location.startsWith(item.path));
+        return (
+          <Link key={item.path} href={item.path}>
+            <button
+              className={cn(
+                "flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors",
+                isActive 
+                  ? "bg-primary/10 text-primary" 
+                  : "text-muted-foreground hover:text-foreground hover:bg-accent"
+              )}
+              data-testid={`nav-desktop-${item.label.toLowerCase()}`}
+            >
+              <item.icon className="h-4 w-4" />
+              <span>{item.label}</span>
+            </button>
+          </Link>
+        );
+      })}
+    </nav>
+  );
+}
