@@ -91,6 +91,42 @@ export const userPreferences = pgTable("user_preferences", {
   fontSize: varchar("font_size", { length: 10 }).default("medium"),
 });
 
+export const devotionalBooks = pgTable("devotional_books", {
+  id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+  title: varchar("title", { length: 255 }).notNull(),
+  author: varchar("author", { length: 255 }),
+  description: text("description"),
+  coverColor: varchar("cover_color", { length: 20 }).default("#2c4a6e"),
+  isPublic: boolean("is_public").default(true),
+});
+
+export const devotionalChapters = pgTable("devotional_chapters", {
+  id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+  bookId: integer("book_id").notNull(),
+  title: varchar("title", { length: 255 }).notNull(),
+  content: text("content").notNull(),
+  orderIndex: integer("order_index").notNull().default(0),
+});
+
+export const bookProgress = pgTable("book_progress", {
+  id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+  userId: varchar("user_id").notNull(),
+  bookId: integer("book_id").notNull(),
+  currentChapterId: integer("current_chapter_id"),
+  lastReadAt: timestamp("last_read_at").defaultNow(),
+});
+
+export const bookHighlights = pgTable("book_highlights", {
+  id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+  userId: varchar("user_id").notNull(),
+  chapterId: integer("chapter_id").notNull(),
+  startOffset: integer("start_offset").notNull(),
+  endOffset: integer("end_offset").notNull(),
+  color: varchar("color", { length: 20 }).notNull().default("yellow"),
+  note: text("note"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
 export const highlightsRelations = relations(highlights, ({ one }) => ({
   verse: one(bibleVerses, {
     fields: [highlights.verseId],
@@ -144,6 +180,10 @@ export const insertSermonSchema = createInsertSchema(sermons).omit({ id: true, c
 export const insertNoteSchema = createInsertSchema(notes).omit({ id: true, createdAt: true });
 export const insertSavedVerseSchema = createInsertSchema(savedVerses).omit({ id: true, createdAt: true });
 export const insertUserPreferencesSchema = createInsertSchema(userPreferences).omit({ id: true });
+export const insertDevotionalBookSchema = createInsertSchema(devotionalBooks).omit({ id: true });
+export const insertDevotionalChapterSchema = createInsertSchema(devotionalChapters).omit({ id: true });
+export const insertBookProgressSchema = createInsertSchema(bookProgress).omit({ id: true, lastReadAt: true });
+export const insertBookHighlightSchema = createInsertSchema(bookHighlights).omit({ id: true, createdAt: true });
 
 export type BibleVerse = typeof bibleVerses.$inferSelect;
 export type InsertBibleVerse = z.infer<typeof insertBibleVerseSchema>;
@@ -165,3 +205,11 @@ export type SavedVerse = typeof savedVerses.$inferSelect;
 export type InsertSavedVerse = z.infer<typeof insertSavedVerseSchema>;
 export type UserPreferences = typeof userPreferences.$inferSelect;
 export type InsertUserPreferences = z.infer<typeof insertUserPreferencesSchema>;
+export type DevotionalBook = typeof devotionalBooks.$inferSelect;
+export type InsertDevotionalBook = z.infer<typeof insertDevotionalBookSchema>;
+export type DevotionalChapter = typeof devotionalChapters.$inferSelect;
+export type InsertDevotionalChapter = z.infer<typeof insertDevotionalChapterSchema>;
+export type BookProgress = typeof bookProgress.$inferSelect;
+export type InsertBookProgress = z.infer<typeof insertBookProgressSchema>;
+export type BookHighlight = typeof bookHighlights.$inferSelect;
+export type InsertBookHighlight = z.infer<typeof insertBookHighlightSchema>;

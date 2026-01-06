@@ -1,11 +1,13 @@
 import {
   bibleVerses, highlights, hymns, savedHymns, playlists, playlistItems,
-  sermons, notes, savedVerses, userPreferences,
+  sermons, notes, savedVerses, userPreferences, devotionalBooks, devotionalChapters, bookProgress, bookHighlights,
   type BibleVerse, type InsertBibleVerse, type Highlight, type InsertHighlight,
   type Hymn, type InsertHymn, type SavedHymn, type InsertSavedHymn,
   type Playlist, type InsertPlaylist, type PlaylistItem, type InsertPlaylistItem,
   type Sermon, type InsertSermon, type Note, type InsertNote,
   type SavedVerse, type InsertSavedVerse, type UserPreferences, type InsertUserPreferences,
+  type DevotionalBook, type InsertDevotionalBook, type DevotionalChapter, type InsertDevotionalChapter,
+  type BookProgress, type InsertBookProgress, type BookHighlight, type InsertBookHighlight,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, like, or, ilike, asc, desc } from "drizzle-orm";
@@ -59,6 +61,18 @@ export interface IStorage {
   
   getUserPreferences(userId: string): Promise<UserPreferences | undefined>;
   upsertUserPreferences(prefs: InsertUserPreferences): Promise<UserPreferences>;
+  
+  getDevotionalBooks(): Promise<DevotionalBook[]>;
+  getDevotionalBook(id: number): Promise<DevotionalBook | undefined>;
+  getDevotionalChapters(bookId: number): Promise<DevotionalChapter[]>;
+  getDevotionalChapter(id: number): Promise<DevotionalChapter | undefined>;
+  insertDevotionalBook(book: InsertDevotionalBook): Promise<DevotionalBook>;
+  insertDevotionalChapter(chapter: InsertDevotionalChapter): Promise<DevotionalChapter>;
+  getBookProgress(userId: string, bookId: number): Promise<BookProgress | undefined>;
+  updateBookProgress(progress: InsertBookProgress): Promise<BookProgress>;
+  getBookHighlights(userId: string, chapterId: number): Promise<BookHighlight[]>;
+  createBookHighlight(highlight: InsertBookHighlight): Promise<BookHighlight>;
+  deleteBookHighlight(id: number, userId: string): Promise<void>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -328,6 +342,70 @@ export class DatabaseStorage implements IStorage {
     }
     const [newPrefs] = await db.insert(userPreferences).values(prefs).returning();
     return newPrefs;
+  }
+
+  async getDevotionalBooks(): Promise<DevotionalBook[]> {
+    return db.select().from(devotionalBooks).where(eq(devotionalBooks.isPublic, true));
+  }
+
+  async getDevotionalBook(id: number): Promise<DevotionalBook | undefined> {
+    const [book] = await db.select().from(devotionalBooks).where(eq(devotionalBooks.id, id));
+    return book;
+  }
+
+  async getDevotionalChapters(bookId: number): Promise<DevotionalChapter[]> {
+    return db.select().from(devotionalChapters)
+      .where(eq(devotionalChapters.bookId, bookId))
+      .orderBy(asc(devotionalChapters.orderIndex));
+  }
+
+  async getDevotionalChapter(id: number): Promise<DevotionalChapter | undefined> {
+    const [chapter] = await db.select().from(devotionalChapters).where(eq(devotionalChapters.id, id));
+    return chapter;
+  }
+
+  async insertDevotionalBook(book: InsertDevotionalBook): Promise<DevotionalBook> {
+    const [newBook] = await db.insert(devotionalBooks).values(book).returning();
+    return newBook;
+  }
+
+  async insertDevotionalChapter(chapter: InsertDevotionalChapter): Promise<DevotionalChapter> {
+    const [newChapter] = await db.insert(devotionalChapters).values(chapter).returning();
+    return newChapter;
+  }
+
+  async getBookProgress(userId: string, bookId: number): Promise<BookProgress | undefined> {
+    const [progress] = await db.select().from(bookProgress)
+      .where(and(eq(bookProgress.userId, userId), eq(bookProgress.bookId, bookId)));
+    return progress;
+  }
+
+  async updateBookProgress(progress: InsertBookProgress): Promise<BookProgress> {
+    const existing = await this.getBookProgress(progress.userId, progress.bookId);
+    if (existing) {
+      const [updated] = await db.update(bookProgress)
+        .set({ currentChapterId: progress.currentChapterId, lastReadAt: new Date() })
+        .where(eq(bookProgress.id, existing.id))
+        .returning();
+      return updated;
+    }
+    const [newProgress] = await db.insert(bookProgress).values(progress).returning();
+    return newProgress;
+  }
+
+  async getBookHighlights(userId: string, chapterId: number): Promise<BookHighlight[]> {
+    return db.select().from(bookHighlights)
+      .where(and(eq(bookHighlights.userId, userId), eq(bookHighlights.chapterId, chapterId)))
+      .orderBy(asc(bookHighlights.startOffset));
+  }
+
+  async createBookHighlight(highlight: InsertBookHighlight): Promise<BookHighlight> {
+    const [newHighlight] = await db.insert(bookHighlights).values(highlight).returning();
+    return newHighlight;
+  }
+
+  async deleteBookHighlight(id: number, userId: string): Promise<void> {
+    await db.delete(bookHighlights).where(and(eq(bookHighlights.id, id), eq(bookHighlights.userId, userId)));
   }
 }
 

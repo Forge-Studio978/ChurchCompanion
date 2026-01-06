@@ -27,15 +27,17 @@ export function Header() {
     <header className="sticky top-0 z-40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b border-border">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16 gap-4">
-          <Link href="/">
-            <a className="flex items-center gap-3" data-testid="link-home">
-              <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
-                <span className="text-primary font-serif text-lg font-semibold">C</span>
-              </div>
-              <span className="font-serif text-xl font-semibold tracking-tight hidden sm:block">
-                Christian Center
-              </span>
-            </a>
+          <Link
+            href="/"
+            className="flex items-center gap-3"
+            data-testid="link-home"
+          >
+            <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
+              <span className="text-primary font-serif text-lg font-semibold">C</span>
+            </div>
+            <span className="font-serif text-xl font-semibold tracking-tight hidden sm:block">
+              Christian Center
+            </span>
           </Link>
 
           <TopNav />
@@ -64,19 +66,23 @@ export function Header() {
                   </div>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem asChild>
-                    <Link href="/library">
-                      <a className="flex items-center gap-2 w-full cursor-pointer" data-testid="menu-library">
-                        <User className="h-4 w-4" />
-                        My Library
-                      </a>
+                    <Link
+                      href="/library"
+                      className="flex items-center gap-2 w-full cursor-pointer"
+                      data-testid="menu-library"
+                    >
+                      <User className="h-4 w-4" />
+                      My Library
                     </Link>
                   </DropdownMenuItem>
                   <DropdownMenuItem asChild>
-                    <Link href="/settings">
-                      <a className="flex items-center gap-2 w-full cursor-pointer" data-testid="menu-settings">
-                        <Settings className="h-4 w-4" />
-                        Settings
-                      </a>
+                    <Link
+                      href="/settings"
+                      className="flex items-center gap-2 w-full cursor-pointer"
+                      data-testid="menu-settings"
+                    >
+                      <Settings className="h-4 w-4" />
+                      Settings
                     </Link>
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
