@@ -1,26 +1,34 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Layout } from "@/components/layout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogFooter,
+  DialogDescription,
 } from "@/components/ui/dialog";
 import { useAuth } from "@/hooks/use-auth";
+import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
-import { Book, ChevronLeft, ChevronRight, BookOpen, List } from "lucide-react";
-import type { DevotionalBook, DevotionalChapter } from "@shared/schema";
+import { Book, ChevronLeft, ChevronRight, BookOpen, List, Highlighter, Trash2, MessageSquare } from "lucide-react";
+import type { DevotionalBook, DevotionalChapter, BookHighlight } from "@shared/schema";
 
 export default function Books() {
   const { isAuthenticated } = useAuth();
+  const { toast } = useToast();
   const [selectedBookId, setSelectedBookId] = useState<number | null>(null);
   const [selectedChapterId, setSelectedChapterId] = useState<number | null>(null);
   const [showChapterList, setShowChapterList] = useState(false);
+  const [selectedText, setSelectedText] = useState("");
+  const [showHighlightDialog, setShowHighlightDialog] = useState(false);
+  const [highlightNote, setHighlightNote] = useState("");
 
   const { data: books = [], isLoading } = useQuery<DevotionalBook[]>({
     queryKey: ["/api/devotional-books"],
@@ -39,9 +47,54 @@ export default function Books() {
     enabled: !!selectedChapterId,
   });
 
+  const { data: progress } = useQuery<{ currentChapterId: number } | null>({
+    queryKey: ["/api/book-progress", selectedBookId],
+    enabled: !!selectedBookId && isAuthenticated,
+  });
+
+  const { data: highlights = [] } = useQuery<BookHighlight[]>({
+    queryKey: ["/api/book-highlights", selectedChapterId],
+    enabled: !!selectedChapterId && isAuthenticated,
+  });
+
+  useEffect(() => {
+    if (progress?.currentChapterId && bookData && !selectedChapterId) {
+      setSelectedChapterId(progress.currentChapterId);
+    }
+  }, [progress, bookData, selectedChapterId]);
+
   const updateProgressMutation = useMutation({
     mutationFn: async (data: { bookId: number; currentChapterId: number }) => {
       return apiRequest("POST", "/api/book-progress", data);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/book-progress", selectedBookId] });
+    },
+  });
+
+  const addHighlightMutation = useMutation({
+    mutationFn: async (data: { chapterId: number; highlightedText: string; note?: string }) => {
+      return apiRequest("POST", "/api/book-highlights", data);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/book-highlights", selectedChapterId] });
+      toast({
+        title: "Highlight saved",
+        description: "Your highlight and note have been saved.",
+      });
+    },
+  });
+
+  const deleteHighlightMutation = useMutation({
+    mutationFn: async (id: number) => {
+      return apiRequest("DELETE", `/api/book-highlights/${id}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/book-highlights", selectedChapterId] });
+      toast({
+        title: "Highlight removed",
+        description: "The highlight has been deleted.",
+      });
     },
   });
 
@@ -85,6 +138,26 @@ export default function Books() {
     }
   };
 
+  const handleTextSelection = () => {
+    const selection = window.getSelection();
+    const text = selection?.toString().trim();
+    if (text && text.length > 0) {
+      setSelectedText(text);
+    }
+  };
+
+  const handleAddHighlight = () => {
+    if (!selectedChapterId || !selectedText) return;
+    addHighlightMutation.mutate({
+      chapterId: selectedChapterId,
+      highlightedText: selectedText,
+      note: highlightNote || undefined,
+    });
+    setShowHighlightDialog(false);
+    setSelectedText("");
+    setHighlightNote("");
+  };
+
   const formatContent = (content: string) => {
     return content.split("\n\n").map((paragraph, i) => (
       <p key={i} className="mb-4 leading-relaxed">
@@ -106,13 +179,29 @@ export default function Books() {
               <ChevronLeft className="h-4 w-4 mr-1" />
               Back
             </Button>
-            <Button variant="outline" onClick={() => setShowChapterList(true)} data-testid="button-chapters">
-              <List className="h-4 w-4 mr-2" />
-              Chapters
-            </Button>
+            <div className="flex items-center gap-2">
+              {isAuthenticated && selectedText && (
+                <Button
+                  variant="default"
+                  size="sm"
+                  onClick={() => setShowHighlightDialog(true)}
+                  data-testid="button-highlight"
+                >
+                  <Highlighter className="h-4 w-4 mr-2" />
+                  Highlight
+                </Button>
+              )}
+              <Button variant="outline" onClick={() => setShowChapterList(true)} data-testid="button-chapters">
+                <List className="h-4 w-4 mr-2" />
+                Chapters
+              </Button>
+            </div>
           </div>
 
-          <article className="prose prose-lg dark:prose-invert max-w-none">
+          <article
+            className="prose prose-lg dark:prose-invert max-w-none"
+            onMouseUp={handleTextSelection}
+          >
             {isLoadingChapter ? (
               <div className="space-y-4">
                 <Skeleton className="h-8 w-3/4" />
@@ -128,9 +217,50 @@ export default function Books() {
                 <div className="font-serif text-lg" data-testid="chapter-content">
                   {formatContent(chapter.content)}
                 </div>
+                {isAuthenticated && (
+                  <p className="text-sm text-muted-foreground mt-6 text-center italic">
+                    Select any text above to highlight and add notes
+                  </p>
+                )}
               </>
             )}
           </article>
+
+          {isAuthenticated && highlights.length > 0 && (
+            <div className="mt-8 pt-6 border-t">
+              <h3 className="font-semibold mb-4 flex items-center gap-2">
+                <Highlighter className="h-4 w-4 text-primary" />
+                Your Highlights ({highlights.length})
+              </h3>
+              <div className="space-y-3">
+                {highlights.map((hl) => (
+                  <Card key={hl.id} className="bg-primary/5 border-primary/20">
+                    <CardContent className="p-4">
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="flex-1 min-w-0">
+                          <p className="italic text-muted-foreground mb-2">"{hl.highlightedText}"</p>
+                          {hl.note && (
+                            <p className="text-sm flex items-start gap-2">
+                              <MessageSquare className="h-4 w-4 mt-0.5 shrink-0" />
+                              {hl.note}
+                            </p>
+                          )}
+                        </div>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => deleteHighlightMutation.mutate(hl.id)}
+                          data-testid={`button-delete-highlight-${hl.id}`}
+                        >
+                          <Trash2 className="h-4 w-4 text-muted-foreground" />
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            </div>
+          )}
 
           <div className="flex items-center justify-between mt-8 pt-6 border-t gap-4">
             <Button
@@ -179,6 +309,59 @@ export default function Books() {
               </ScrollArea>
             </DialogContent>
           </Dialog>
+
+          <Dialog
+            open={showHighlightDialog}
+            onOpenChange={(open) => {
+              setShowHighlightDialog(open);
+              if (!open) {
+                setSelectedText("");
+                setHighlightNote("");
+              }
+            }}
+          >
+            <DialogContent className="max-w-md">
+              <DialogHeader>
+                <DialogTitle>Add Highlight</DialogTitle>
+                <DialogDescription>Save this passage with an optional note.</DialogDescription>
+              </DialogHeader>
+              <div className="space-y-4">
+                <div className="p-3 bg-muted rounded-md">
+                  <p className="text-sm italic">"{selectedText}"</p>
+                </div>
+                <div>
+                  <label className="text-sm font-medium mb-2 block">Add a note (optional)</label>
+                  <Textarea
+                    value={highlightNote}
+                    onChange={(e) => setHighlightNote(e.target.value)}
+                    placeholder="Your thoughts on this passage..."
+                    className="resize-none"
+                    rows={3}
+                    data-testid="input-highlight-note"
+                  />
+                </div>
+              </div>
+              <DialogFooter>
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setShowHighlightDialog(false);
+                    setSelectedText("");
+                    setHighlightNote("");
+                  }}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  onClick={handleAddHighlight}
+                  disabled={addHighlightMutation.isPending}
+                  data-testid="button-save-highlight"
+                >
+                  {addHighlightMutation.isPending ? "Saving..." : "Save Highlight"}
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
         </div>
       </Layout>
     );
@@ -202,6 +385,18 @@ export default function Books() {
             )}
             {bookData.book.description && (
               <p className="mt-4 text-muted-foreground">{bookData.book.description}</p>
+            )}
+            {progress && isAuthenticated && (
+              <div className="mt-4">
+                <Button
+                  variant="default"
+                  onClick={() => handleSelectChapter(progress.currentChapterId)}
+                  data-testid="button-continue-reading"
+                >
+                  <BookOpen className="h-4 w-4 mr-2" />
+                  Continue Reading
+                </Button>
+              </div>
             )}
           </div>
 
@@ -238,6 +433,11 @@ export default function Books() {
                     <div className="flex-1 min-w-0">
                       <h3 className="font-semibold truncate">{ch.title}</h3>
                     </div>
+                    {progress?.currentChapterId === ch.id && (
+                      <span className="text-xs bg-primary/10 text-primary px-2 py-1 rounded-full shrink-0">
+                        Last read
+                      </span>
+                    )}
                     <ChevronRight className="h-5 w-5 text-muted-foreground shrink-0" />
                   </CardContent>
                 </Card>
