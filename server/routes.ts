@@ -28,17 +28,6 @@ export async function registerRoutes(
     }
   });
 
-  app.get("/api/bible/:book/:chapter", async (req, res) => {
-    try {
-      const { book, chapter } = req.params;
-      const verses = await storage.getBibleVerses(book, parseInt(chapter));
-      res.json(verses);
-    } catch (error) {
-      console.error("Error getting Bible verses:", error);
-      res.status(500).json({ message: "Failed to get verses" });
-    }
-  });
-
   app.get("/api/bible/chapters/:book", async (req, res) => {
     try {
       const { book } = req.params;
@@ -58,6 +47,17 @@ export async function registerRoutes(
     } catch (error) {
       console.error("Error searching Bible:", error);
       res.status(500).json({ message: "Failed to search" });
+    }
+  });
+
+  app.get("/api/bible/:book/:chapter", async (req, res) => {
+    try {
+      const { book, chapter } = req.params;
+      const verses = await storage.getBibleVerses(book, parseInt(chapter));
+      res.json(verses);
+    } catch (error) {
+      console.error("Error getting Bible verses:", error);
+      res.status(500).json({ message: "Failed to get verses" });
     }
   });
 
