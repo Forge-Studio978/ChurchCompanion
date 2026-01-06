@@ -1,0 +1,296 @@
+Build a cross-platform web + mobile-friendly app called “Christian Center.”
+
+MISSION
+A simple, personal Christian worship + study companion.
+NOT social media. NOT a church management platform.
+Private spiritual tools only.
+
+CORE FEATURES (MVP — must be stable + fast)
+
+---------------------------------
+1. AUTH & USER ACCOUNTS
+---------------------------------
+• Email + password login
+• Google + Apple sign-in optional
+• Secure session
+• Profile holds:
+  - name
+  - preferred Bible version
+  - theme mode
+  - saved hymns
+  - playlists
+  - saved sermons
+  - notes
+
+No public profiles.
+No social features.
+
+---------------------------------
+2. BIBLE READER
+---------------------------------
+• Support public-domain translations first (e.g., KJV)
+• Book → Chapter → Verse navigation
+• Verse search
+• Highlight verses
+• Save verses
+• Write notes attached to verses
+• Adjust font size
+• Light/Dark mode
+• Offline caching preferred
+
+---------------------------------
+3. HYMNAL LIBRARY (TEXT ONLY)
+---------------------------------
+Goal: digital hymnal
+
+• Load hymns from public-domain sources only
+• Hymn fields:
+  - id
+  - title
+  - composer (optional)
+  - year (optional)
+  - lyrics (multi-verse)
+  - tags (praise, worship, faith, prayer, etc.)
+  - meter (optional)
+  - tune (optional)
+
+Features:
+• Search by title / lyric / tag
+• Browse alphabetically
+• Save favorite hymns
+• Create hymn playlists (lyrics only)
+• Read hymns full-screen
+
+No copyrighted lyrics.
+
+---------------------------------
+4. HYMN AUDIO (OPTIONAL + LICENSING SAFE)
+---------------------------------
+Add optional hymn audio playback support.
+
+Rules:
+• Only allow:
+  - user-uploaded audio
+  - user-provided public-domain recording links
+• DO NOT provide built-in copyrighted recordings
+• DO NOT stream Spotify/Apple/YouTube inside app
+• Display disclaimer:
+  “Upload or link only audio you have rights to use.”
+
+Supported:
+• mp3
+• wav
+• m4a
+• external link field
+
+Attach audio to hymns.
+
+Audio Player:
+• Play / Pause
+• Seek bar
+• Title
+• Duration
+• Minimal UI
+• No autoplay
+• No background streaming beyond page
+
+Playlist playback supported.
+
+---------------------------------
+5. SERMON & LIVESTREAM STUDY TOOL
+---------------------------------
+Purpose: help users stay engaged in worship
+
+User can:
+• Add livestream links (YouTube/Vimeo/embed)
+• OR upload sermon audio
+• OR paste sermon text
+
+Features:
+• Built-in notes panel
+• Timestamped notes (optional)
+• Scripture reference detection (if mentioned)
+• Notes saved per sermon
+• Attach hymns sang during service (manual select)
+
+No AI analysis required for MVP.
+
+---------------------------------
+6. PERSONAL LIBRARY
+---------------------------------
+Users can save:
+• hymns
+• playlists
+• sermons
+• notes
+• Bible highlights
+
+Organize with:
+• folders or categories
+
+Everything private to the user.
+
+---------------------------------
+7. SIMPLE HOME SCREEN
+---------------------------------
+Show:
+• Verse of the day (optional)
+• Quick nav buttons:
+  - Bible
+  - Hymns
+  - Library
+  - Sermons
+
+Clean. Minimal. Calm.
+
+---------------------------------
+8. DESIGN PRINCIPLES
+---------------------------------
+• Warm + peaceful tone
+• Christian-friendly typography
+• Fast load
+• Zero clutter
+• No dopamine-scroll behavior
+
+---------------------------------
+DATABASE STRUCTURE
+---------------------------------
+
+Users
+- id
+- email
+- password_hash
+- display_name
+- preferred_bible_version
+- theme_mode
+- created_at
+
+BibleVerses
+- id
+- book
+- chapter
+- verse
+- text
+- translation
+
+Highlights
+- id
+- user_id
+- verse_id
+- color
+- note
+- created_at
+
+Hymns
+- id
+- title
+- lyrics
+- composer
+- year
+- tags
+- tune
+- meter
+
+HymnAudio
+- id
+- hymn_id
+- user_id
+- file_url OR external_url
+- created_at
+
+Playlists
+- id
+- user_id
+- title
+- created_at
+
+PlaylistItems
+- id
+- playlist_id
+- hymn_id
+- order_index
+
+Sermons
+- id
+- user_id
+- title
+- description
+- livestream_url OR audio_url OR text_content
+- created_at
+
+Notes
+- id
+- user_id
+- sermon_id OR verse_id
+- timestamp (optional)
+- content
+- created_at
+
+---------------------------------
+UX WIREFRAME SUMMARY
+---------------------------------
+
+Home
+- Verse of Day
+- Buttons:
+  Bible | Hymns | Library | Sermons
+
+Bible Reader
+- Top: Book selector
+- Middle: Chapter text
+- Bottom: Highlight | Save | Note
+
+Hymnal
+- Search bar
+- List of hymns
+- Tap → full lyrics
+- Audio button appears only if attached
+
+Playlist View
+- List of hymns
+- Play audio (optional)
+
+Sermon View
+- Video or audio
+- Notes panel beside (desktop)
+- Notes under (mobile)
+
+Library
+- Saved items grid/list
+
+---------------------------------
+MONETIZATION (DO NOT IMPLEMENT YET)
+---------------------------------
+Keep MVP fully usable free.
+
+Future optional upgrades:
+• cloud backup expansion
+• custom themes
+• unlimited playlists
+• sermon uploading limits
+
+---------------------------------
+SCOPE CONTROL
+---------------------------------
+NO:
+• chat
+• social feed
+• group features
+• church admin features
+• AI
+• advanced analytics
+• recommendation engines
+• licensing-restricted media
+
+---------------------------------
+GOALS
+---------------------------------
+Be:
+• peaceful
+• reliable
+• spiritually helpful
+• safe legally
+• sustainable to build
+
+This should feel like:
+A calm digital worship companion.
