@@ -4,6 +4,7 @@ import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
 export * from "./models/auth";
+export * from "./models/chat";
 
 export const bibleVerses = pgTable("bible_verses", {
   id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
@@ -90,6 +91,22 @@ export const detectedHymns = pgTable("detected_hymns", {
   hymnId: integer("hymn_id"),
   title: varchar("title", { length: 255 }),
   timestampSeconds: integer("timestamp_seconds").notNull(),
+});
+
+export const transcripts = pgTable("transcripts", {
+  id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+  livestreamId: integer("livestream_id").notNull(),
+  status: varchar("status", { length: 20 }).default("pending"),
+  createdAt: timestamp("created_at").defaultNow(),
+  completedAt: timestamp("completed_at"),
+});
+
+export const transcriptSegments = pgTable("transcript_segments", {
+  id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+  transcriptId: integer("transcript_id").notNull(),
+  startSeconds: integer("start_seconds").notNull(),
+  endSeconds: integer("end_seconds").notNull(),
+  text: text("text").notNull(),
 });
 
 export const sermons = pgTable("sermons", {
@@ -219,6 +236,8 @@ export const insertLivestreamSchema = createInsertSchema(livestreams).omit({ id:
 export const insertLivestreamNoteSchema = createInsertSchema(livestreamNotes).omit({ id: true, createdAt: true });
 export const insertDetectedVerseSchema = createInsertSchema(detectedVerses).omit({ id: true });
 export const insertDetectedHymnSchema = createInsertSchema(detectedHymns).omit({ id: true });
+export const insertTranscriptSchema = createInsertSchema(transcripts).omit({ id: true, createdAt: true, completedAt: true });
+export const insertTranscriptSegmentSchema = createInsertSchema(transcriptSegments).omit({ id: true });
 export const insertSermonSchema = createInsertSchema(sermons).omit({ id: true, createdAt: true });
 export const insertNoteSchema = createInsertSchema(notes).omit({ id: true, createdAt: true });
 export const insertSavedVerseSchema = createInsertSchema(savedVerses).omit({ id: true, createdAt: true });
@@ -248,6 +267,10 @@ export type DetectedVerse = typeof detectedVerses.$inferSelect;
 export type InsertDetectedVerse = z.infer<typeof insertDetectedVerseSchema>;
 export type DetectedHymn = typeof detectedHymns.$inferSelect;
 export type InsertDetectedHymn = z.infer<typeof insertDetectedHymnSchema>;
+export type Transcript = typeof transcripts.$inferSelect;
+export type InsertTranscript = z.infer<typeof insertTranscriptSchema>;
+export type TranscriptSegment = typeof transcriptSegments.$inferSelect;
+export type InsertTranscriptSegment = z.infer<typeof insertTranscriptSegmentSchema>;
 export type Sermon = typeof sermons.$inferSelect;
 export type InsertSermon = z.infer<typeof insertSermonSchema>;
 export type Note = typeof notes.$inferSelect;
