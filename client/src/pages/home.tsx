@@ -80,21 +80,29 @@ function VerseOfDay() {
           variant="ghost"
           size="icon"
           className="h-8 w-8"
-          onClick={() => refetch()}
+          onClick={(e) => {
+            e.stopPropagation();
+            refetch();
+          }}
           disabled={isRefetching}
           data-testid="button-refresh-verse"
         >
           <RefreshCw className={`h-4 w-4 ${isRefetching ? "animate-spin" : ""}`} />
         </Button>
       </CardHeader>
-      <CardContent className="pt-0">
-        <blockquote className="font-serif text-lg md:text-xl leading-relaxed mb-3" data-testid="text-verse-of-day">
-          "{verse.text}"
-        </blockquote>
-        <cite className="text-sm text-muted-foreground not-italic">
-          — {verse.book} {verse.chapter}:{verse.verse} ({verse.translation})
-        </cite>
-      </CardContent>
+      <Link href={`/bible?book=${encodeURIComponent(verse.book)}&chapter=${verse.chapter}&verse=${verse.verse}`}>
+        <CardContent className="pt-0 cursor-pointer hover:bg-primary/5 rounded-b-lg transition-colors">
+          <blockquote className="font-serif text-lg md:text-xl leading-relaxed mb-3" data-testid="text-verse-of-day">
+            "{verse.text}"
+          </blockquote>
+          <div className="flex items-center justify-between">
+            <cite className="text-sm text-muted-foreground not-italic">
+              — {verse.book} {verse.chapter}:{verse.verse} ({verse.translation})
+            </cite>
+            <ChevronRight className="h-4 w-4 text-muted-foreground" />
+          </div>
+        </CardContent>
+      </Link>
     </Card>
   );
 }

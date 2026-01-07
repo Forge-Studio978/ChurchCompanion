@@ -1,5 +1,6 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
+import { useSearch } from "wouter";
 import { Layout } from "@/components/layout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -56,14 +57,22 @@ const HIGHLIGHT_COLORS = [
 export default function Bible() {
   const { isAuthenticated } = useAuth();
   const { toast } = useToast();
-  const [book, setBook] = useState("John");
-  const [chapter, setChapter] = useState(1);
+  const searchParams = useSearch();
+  const params = new URLSearchParams(searchParams);
+  const urlBook = params.get("book");
+  const urlChapter = params.get("chapter");
+  const urlVerse = params.get("verse");
+  
+  const [book, setBook] = useState(urlBook || "John");
+  const [chapter, setChapter] = useState(urlChapter ? parseInt(urlChapter) : 1);
+  const [targetVerse, setTargetVerse] = useState<number | null>(urlVerse ? parseInt(urlVerse) : null);
   const [selectedVerse, setSelectedVerse] = useState<BibleVerse | null>(null);
   const [noteDialogOpen, setNoteDialogOpen] = useState(false);
   const [noteContent, setNoteContent] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
   const [showSearch, setShowSearch] = useState(false);
-
+  const verseRefs = useRef<Map<number, HTMLElement>>(new Map());
+  
   const { data: verses = [], isLoading } = useQuery<BibleVerse[]>({
     queryKey: ["/api/bible", book, chapter],
     enabled: !!book && !!chapter,
@@ -83,6 +92,31 @@ export default function Bible() {
     queryKey: ["/api/bible/search", searchQuery],
     enabled: searchQuery.length > 2,
   });
+
+  useEffect(() => {
+    if (urlBook) setBook(urlBook);
+    if (urlChapter) setChapter(parseInt(urlChapter));
+    if (urlVerse) setTargetVerse(parseInt(urlVerse));
+  }, [urlBook, urlChapter, urlVerse]);
+  
+  useEffect(() => {
+    if (targetVerse && verses.length > 0) {
+      const targetVerseData = verses.find(v => v.verse === targetVerse);
+      if (targetVerseData) {
+        const element = verseRefs.current.get(targetVerseData.id);
+        if (element) {
+          setTimeout(() => {
+            element.scrollIntoView({ behavior: "smooth", block: "center" });
+            element.classList.add("ring-2", "ring-primary", "ring-offset-2");
+            setTimeout(() => {
+              element.classList.remove("ring-2", "ring-primary", "ring-offset-2");
+            }, 2000);
+          }, 100);
+          setTargetVerse(null);
+        }
+      }
+    }
+  }, [targetVerse, verses]);
 
   const highlightMutation = useMutation({
     mutationFn: async ({ verseId, color }: { verseId: number; color: string }) => {
@@ -259,8 +293,9 @@ export default function Bible() {
               <Popover key={verse.id}>
                 <PopoverTrigger asChild>
                   <span
+                    ref={(el) => { if (el) verseRefs.current.set(verse.id, el); }}
                     className={cn(
-                      "inline cursor-pointer rounded py-1 px-0.5 transition-colors hover:bg-accent active:bg-accent/80",
+                      "inline cursor-pointer rounded py-1 px-0.5 transition-all hover:bg-accent active:bg-accent/80",
                       getVerseHighlight(verse.id)
                     )}
                     data-testid={`verse-${verse.id}`}

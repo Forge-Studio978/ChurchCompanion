@@ -8,19 +8,12 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-} from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useAuth } from "@/hooks/use-auth";
 import { 
   Book, Music, FileText, Highlighter, Trash2, Bookmark, FolderOpen, 
-  Search, Plus, Download, Radio, ChevronRight, BookOpen, Clock
+  Search, Radio, ChevronRight, BookOpen, Clock
 } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import type { BibleVerse, Hymn, Note, Highlight, DevotionalBook, Livestream, LivestreamNote } from "@shared/schema";
@@ -51,13 +44,6 @@ interface LivestreamNoteWithContext extends LivestreamNote {
   livestream: Livestream;
 }
 
-interface GutenbergSearchResult {
-  gutenbergId: string;
-  title: string;
-  author: string;
-  subjects: string[];
-  downloadUrl: string | null;
-}
 
 function formatLivestreamTime(seconds: number): string {
   const h = Math.floor(seconds / 3600);
@@ -74,9 +60,6 @@ export default function LibraryPage() {
   const { toast } = useToast();
   const [, navigate] = useLocation();
   const [searchQuery, setSearchQuery] = useState("");
-  const [showAddBook, setShowAddBook] = useState(false);
-  const [gutenbergQuery, setGutenbergQuery] = useState("");
-  const [selectedBook, setSelectedBook] = useState<DevotionalBook | null>(null);
 
   const { data: savedVerses = [], isLoading: versesLoading } = useQuery<SavedVerseWithVerse[]>({
     queryKey: ["/api/saved-verses"],
@@ -106,16 +89,6 @@ export default function LibraryPage() {
   const { data: savedLivestreamNotes = [], isLoading: livestreamNotesLoading } = useQuery<LivestreamNoteWithContext[]>({
     queryKey: ["/api/livestream-notes"],
     enabled: isAuthenticated,
-  });
-
-  const { data: gutenbergResults = { results: [] }, isFetching: isSearching } = useQuery<{ results: GutenbergSearchResult[] }>({
-    queryKey: ["/api/gutenberg/search", gutenbergQuery],
-    queryFn: async () => {
-      if (!gutenbergQuery || gutenbergQuery.length < 2) return { results: [] };
-      const response = await fetch(`/api/gutenberg/search?q=${encodeURIComponent(gutenbergQuery)}`);
-      return response.json();
-    },
-    enabled: gutenbergQuery.length >= 2,
   });
 
   const deleteSavedVerseMutation = useMutation({
@@ -167,29 +140,6 @@ export default function LibraryPage() {
       toast({ title: "Book removed from library" });
     },
   });
-
-  const importBookMutation = useMutation({
-    mutationFn: async (book: GutenbergSearchResult) => {
-      return apiRequest("POST", "/api/gutenberg/import", {
-        gutenbergId: book.gutenbergId,
-        title: book.title,
-        author: book.author,
-        downloadUrl: book.downloadUrl,
-      });
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/devotional-books"] });
-      toast({ title: "Book imported successfully" });
-      setShowAddBook(false);
-      setGutenbergQuery("");
-    },
-    onError: () => {
-      toast({ title: "Failed to import book", variant: "destructive" });
-    },
-  });
-
-  const bibleNotes = notes.filter(n => n.verseId && !n.sermonId);
-  const oldLivestreamNotes = notes.filter(n => n.sermonId);
 
   const filteredNotes = searchQuery
     ? notes.filter(n => n.content.toLowerCase().includes(searchQuery.toLowerCase()))
@@ -303,14 +253,10 @@ export default function LibraryPage() {
           </TabsList>
 
           <TabsContent value="books">
-            <div className="flex items-center justify-between gap-4 mb-4 flex-wrap">
+            <div className="mb-4">
               <p className="text-sm text-muted-foreground">
-                Classic devotionals and books you've added
+                Classic devotional books
               </p>
-              <Button onClick={() => setShowAddBook(true)} data-testid="button-add-book">
-                <Plus className="h-4 w-4 mr-2" />
-                Add Book
-              </Button>
             </div>
             {booksLoading ? (
               <div className="grid gap-4 sm:grid-cols-2">
@@ -321,8 +267,8 @@ export default function LibraryPage() {
             ) : books.length === 0 ? (
               <EmptyState
                 icon={Book}
-                title="No books yet"
-                description="Add devotional books from Project Gutenberg"
+                title="No books available"
+                description="Devotional books will appear here"
               />
             ) : (
               <div className="grid gap-4 sm:grid-cols-2">
@@ -653,74 +599,6 @@ export default function LibraryPage() {
           </TabsContent>
         </Tabs>
 
-        <Dialog open={showAddBook} onOpenChange={setShowAddBook}>
-          <DialogContent className="max-w-sm sm:max-w-md mx-4">
-            <DialogHeader>
-              <DialogTitle>Add a Book</DialogTitle>
-              <DialogDescription>
-                Search Project Gutenberg for Christian books
-              </DialogDescription>
-            </DialogHeader>
-            <div className="space-y-4">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder="Search for books..."
-                  value={gutenbergQuery}
-                  onChange={(e) => setGutenbergQuery(e.target.value)}
-                  className="pl-9"
-                  data-testid="input-search-gutenberg"
-                />
-              </div>
-              <ScrollArea className="h-[50vh]">
-                {isSearching ? (
-                  <div className="space-y-3 pr-3">
-                    {Array.from({ length: 3 }).map((_, i) => (
-                      <Skeleton key={i} className="h-20 w-full" />
-                    ))}
-                  </div>
-                ) : gutenbergResults.results.length === 0 ? (
-                  <div className="py-8 text-center text-muted-foreground text-sm">
-                    {gutenbergQuery.length >= 2 
-                      ? "No books found. Try a different search."
-                      : "Type at least 2 characters to search"}
-                  </div>
-                ) : (
-                  <div className="space-y-2 pr-3">
-                    {gutenbergResults.results.map((book) => (
-                      <Card key={book.gutenbergId} data-testid={`gutenberg-result-${book.gutenbergId}`}>
-                        <CardContent className="p-3">
-                          <div className="space-y-2">
-                            <div className="min-w-0">
-                              <h4 className="font-medium text-sm leading-tight line-clamp-2">{book.title}</h4>
-                              <p className="text-xs text-muted-foreground truncate mt-0.5">{book.author}</p>
-                            </div>
-                            <Button
-                              size="sm"
-                              className="w-full"
-                              disabled={!book.downloadUrl || importBookMutation.isPending}
-                              onClick={() => importBookMutation.mutate(book)}
-                              data-testid={`import-book-${book.gutenbergId}`}
-                            >
-                              {importBookMutation.isPending ? (
-                                "Importing..."
-                              ) : (
-                                <>
-                                  <Download className="h-4 w-4 mr-1" />
-                                  Add to Library
-                                </>
-                              )}
-                            </Button>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    ))}
-                  </div>
-                )}
-              </ScrollArea>
-            </div>
-          </DialogContent>
-        </Dialog>
       </div>
     </Layout>
   );

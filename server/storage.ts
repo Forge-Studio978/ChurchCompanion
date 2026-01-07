@@ -13,7 +13,7 @@ import {
   type DetectedVerse, type InsertDetectedVerse, type DetectedHymn, type InsertDetectedHymn,
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, and, like, or, ilike, asc, desc } from "drizzle-orm";
+import { eq, and, like, or, ilike, asc, desc, sql } from "drizzle-orm";
 
 export interface IStorage {
   getVerseOfDay(): Promise<BibleVerse | undefined>;
