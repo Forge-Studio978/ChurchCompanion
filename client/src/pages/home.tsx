@@ -183,9 +183,9 @@ export default function Home() {
         </div>
 
         <div className="space-y-6">
-          <DailyDevotionalCard />
-          
           <VerseOfDay />
+          
+          <DailyDevotionalCard />
 
           <div className="grid gap-3 grid-cols-2">
             {quickNavItems.map((item) => (

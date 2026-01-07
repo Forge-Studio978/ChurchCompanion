@@ -196,36 +196,35 @@ export default function LibraryPage() {
         </div>
 
         <Tabs defaultValue="verses" className="w-full">
-          <TabsList className="w-full grid grid-cols-5 mb-6 h-auto gap-1">
-            <TabsTrigger value="verses" className="gap-2" data-testid="tab-verses">
-              <Bookmark className="h-4 w-4" />
-              <span className="hidden sm:inline">Saved Verses</span>
+          <TabsList className="w-full flex flex-wrap justify-center mb-6 h-auto gap-1 p-1">
+            <TabsTrigger value="verses" className="gap-1 px-2 py-1.5 text-xs sm:text-sm" data-testid="tab-verses">
+              <Bookmark className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+              <span className="hidden sm:inline">Verses</span>
               <span className="sm:hidden">Verses</span>
               {savedVerses.length > 0 && (
-                <Badge variant="secondary" className="ml-1">{savedVerses.length}</Badge>
+                <Badge variant="secondary" className="ml-0.5 text-xs px-1.5">{savedVerses.length}</Badge>
               )}
             </TabsTrigger>
-            <TabsTrigger value="hymns" className="gap-2" data-testid="tab-hymns">
-              <Music className="h-4 w-4" />
-              <span className="hidden sm:inline">Saved Hymns</span>
-              <span className="sm:hidden">Hymns</span>
+            <TabsTrigger value="hymns" className="gap-1 px-2 py-1.5 text-xs sm:text-sm" data-testid="tab-hymns">
+              <Music className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+              <span>Hymns</span>
               {savedHymns.length > 0 && (
-                <Badge variant="secondary" className="ml-1">{savedHymns.length}</Badge>
+                <Badge variant="secondary" className="ml-0.5 text-xs px-1.5">{savedHymns.length}</Badge>
               )}
             </TabsTrigger>
-            <TabsTrigger value="notes" className="gap-2" data-testid="tab-notes">
-              <FileText className="h-4 w-4" />
-              Notes
+            <TabsTrigger value="notes" className="gap-1 px-2 py-1.5 text-xs sm:text-sm" data-testid="tab-notes">
+              <FileText className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+              <span>Notes</span>
               {notes.length > 0 && (
-                <Badge variant="secondary" className="ml-1">{notes.length}</Badge>
+                <Badge variant="secondary" className="ml-0.5 text-xs px-1.5">{notes.length}</Badge>
               )}
             </TabsTrigger>
-            <TabsTrigger value="highlights" className="gap-2" data-testid="tab-highlights">
-              <Highlighter className="h-4 w-4" />
+            <TabsTrigger value="highlights" className="gap-1 px-2 py-1.5 text-xs sm:text-sm" data-testid="tab-highlights">
+              <Highlighter className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
               <span className="hidden sm:inline">Highlights</span>
               <span className="sm:hidden">Marks</span>
               {highlights.length > 0 && (
-                <Badge variant="secondary" className="ml-1">{highlights.length}</Badge>
+                <Badge variant="secondary" className="ml-0.5 text-xs px-1.5">{highlights.length}</Badge>
               )}
             </TabsTrigger>
           </TabsList>

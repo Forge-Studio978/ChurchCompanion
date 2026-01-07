@@ -205,7 +205,7 @@ export default function Hymns() {
         </div>
 
         <div className="flex gap-2 relative">
-          <div className="sm:hidden fixed right-2 z-50 overflow-y-auto py-2 bg-background/95 backdrop-blur-md rounded-2xl shadow-lg border scrollbar-hide" style={{ top: '200px', bottom: '100px' }}>
+          <div className="sm:hidden fixed right-2 z-40 overflow-y-auto py-2 bg-background/95 backdrop-blur-md rounded-2xl shadow-lg border scrollbar-hide" style={{ top: '180px', bottom: '120px' }}>
             <div className="flex flex-col items-center gap-0.5 px-1">
               {ALPHABET.map((letter) => (
                 <button
