@@ -13,6 +13,8 @@ import Hymns from "@/pages/hymns";
 import LibraryPage from "@/pages/library";
 import LivestreamCompanion from "@/pages/livestream";
 import Settings from "@/pages/settings";
+import Auth from "@/pages/auth";
+import AuthCallback from "@/pages/auth-callback";
 
 function Router() {
   const { isAuthenticated, isLoading } = useAuth();
@@ -33,6 +35,8 @@ function Router() {
   return (
     <Switch>
       <Route path="/" component={isAuthenticated ? Home : Landing} />
+      <Route path="/auth" component={Auth} />
+      <Route path="/auth/callback" component={AuthCallback} />
       <Route path="/bible" component={Bible} />
       <Route path="/hymns" component={Hymns} />
       <Route path="/library" component={LibraryPage} />

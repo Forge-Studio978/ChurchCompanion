@@ -23,6 +23,13 @@ export async function registerRoutes(
   await setupAuth(app);
   registerAuthRoutes(app);
 
+  app.get("/api/config/supabase", (req, res) => {
+    res.json({
+      url: process.env.SUPABASE_URL,
+      anonKey: process.env.SUPABASE_ANON_KEY,
+    });
+  });
+
   await seedBibleData();
   await seedHymnsData();
   await seedFrenchHymns();
