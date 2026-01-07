@@ -94,9 +94,89 @@ export interface IStorage {
   getDetectedHymns(livestreamId: number): Promise<DetectedHymn[]>;
 }
 
+const CURATED_VERSES = [
+  { book: "John", chapter: 3, verse: 16 },
+  { book: "Psalms", chapter: 23, verse: 1 },
+  { book: "Romans", chapter: 8, verse: 28 },
+  { book: "Philippians", chapter: 4, verse: 13 },
+  { book: "Jeremiah", chapter: 29, verse: 11 },
+  { book: "Proverbs", chapter: 3, verse: 5 },
+  { book: "Isaiah", chapter: 40, verse: 31 },
+  { book: "Matthew", chapter: 6, verse: 33 },
+  { book: "Romans", chapter: 12, verse: 2 },
+  { book: "Psalms", chapter: 46, verse: 10 },
+  { book: "Joshua", chapter: 1, verse: 9 },
+  { book: "1 Corinthians", chapter: 13, verse: 4 },
+  { book: "Galatians", chapter: 5, verse: 22 },
+  { book: "Ephesians", chapter: 2, verse: 8 },
+  { book: "Hebrews", chapter: 11, verse: 1 },
+  { book: "James", chapter: 1, verse: 2 },
+  { book: "1 Peter", chapter: 5, verse: 7 },
+  { book: "2 Timothy", chapter: 1, verse: 7 },
+  { book: "Psalms", chapter: 27, verse: 1 },
+  { book: "Psalms", chapter: 37, verse: 4 },
+  { book: "Psalms", chapter: 91, verse: 1 },
+  { book: "Psalms", chapter: 119, verse: 105 },
+  { book: "Proverbs", chapter: 16, verse: 3 },
+  { book: "Isaiah", chapter: 41, verse: 10 },
+  { book: "Matthew", chapter: 11, verse: 28 },
+  { book: "Matthew", chapter: 28, verse: 20 },
+  { book: "John", chapter: 14, verse: 6 },
+  { book: "John", chapter: 15, verse: 13 },
+  { book: "Romans", chapter: 5, verse: 8 },
+  { book: "Romans", chapter: 10, verse: 9 },
+  { book: "2 Corinthians", chapter: 5, verse: 17 },
+  { book: "Philippians", chapter: 4, verse: 6 },
+  { book: "Colossians", chapter: 3, verse: 23 },
+  { book: "1 Thessalonians", chapter: 5, verse: 16 },
+  { book: "Hebrews", chapter: 12, verse: 2 },
+  { book: "1 John", chapter: 4, verse: 19 },
+  { book: "Revelation", chapter: 21, verse: 4 },
+  { book: "Genesis", chapter: 1, verse: 1 },
+  { book: "Deuteronomy", chapter: 31, verse: 6 },
+  { book: "Psalms", chapter: 34, verse: 8 },
+  { book: "Psalms", chapter: 100, verse: 4 },
+  { book: "Psalms", chapter: 139, verse: 14 },
+  { book: "Proverbs", chapter: 22, verse: 6 },
+  { book: "Isaiah", chapter: 53, verse: 5 },
+  { book: "Lamentations", chapter: 3, verse: 22 },
+  { book: "Micah", chapter: 6, verse: 8 },
+  { book: "Zephaniah", chapter: 3, verse: 17 },
+  { book: "Matthew", chapter: 5, verse: 16 },
+  { book: "Matthew", chapter: 7, verse: 7 },
+  { book: "Luke", chapter: 6, verse: 31 },
+  { book: "John", chapter: 1, verse: 1 },
+  { book: "John", chapter: 8, verse: 32 },
+  { book: "John", chapter: 10, verse: 10 },
+  { book: "Acts", chapter: 1, verse: 8 },
+  { book: "Romans", chapter: 6, verse: 23 },
+  { book: "1 Corinthians", chapter: 10, verse: 13 },
+  { book: "Galatians", chapter: 2, verse: 20 },
+  { book: "Ephesians", chapter: 4, verse: 32 },
+  { book: "Ephesians", chapter: 6, verse: 10 },
+  { book: "Philippians", chapter: 2, verse: 3 },
+  { book: "Colossians", chapter: 3, verse: 2 },
+  { book: "2 Timothy", chapter: 3, verse: 16 },
+  { book: "Hebrews", chapter: 4, verse: 16 },
+  { book: "James", chapter: 4, verse: 7 },
+  { book: "1 John", chapter: 1, verse: 9 },
+];
+
 export class DatabaseStorage implements IStorage {
   async getVerseOfDay(): Promise<BibleVerse | undefined> {
     const dayOfYear = Math.floor((Date.now() - new Date(new Date().getFullYear(), 0, 0).getTime()) / 86400000);
+    const curatedIndex = dayOfYear % CURATED_VERSES.length;
+    const target = CURATED_VERSES[curatedIndex];
+    
+    const [verse] = await db.select().from(bibleVerses)
+      .where(and(
+        eq(bibleVerses.book, target.book),
+        eq(bibleVerses.chapter, target.chapter),
+        eq(bibleVerses.verse, target.verse)
+      ));
+    
+    if (verse) return verse;
+    
     const allVerses = await db.select().from(bibleVerses).limit(1000);
     if (allVerses.length === 0) return undefined;
     return allVerses[dayOfYear % allVerses.length];

@@ -192,11 +192,11 @@ export default function Hymns() {
                   <Badge
                     key={tag}
                     variant={selectedTag === tag ? "default" : "outline"}
-                    className="cursor-pointer shrink-0"
+                    className="cursor-pointer shrink-0 capitalize"
                     onClick={() => setSelectedTag(tag)}
                     data-testid={`tag-${tag}`}
                   >
-                    {tag}
+                    {tag.charAt(0).toUpperCase() + tag.slice(1).toLowerCase()}
                   </Badge>
                 ))}
               </div>
@@ -204,20 +204,20 @@ export default function Hymns() {
           )}
         </div>
 
-        <div className="flex gap-2">
-          <div className="sm:hidden flex flex-col items-center py-2 sticky top-0">
+        <div className="flex gap-2 relative">
+          <div className="sm:hidden fixed right-2 top-1/2 -translate-y-1/2 z-50 flex flex-col items-center py-1 bg-background/80 backdrop-blur-sm rounded-full shadow-md border">
             {ALPHABET.map((letter) => (
               <button
                 key={letter}
                 onClick={() => handleLetterClick(letter)}
                 disabled={!availableLetters.has(letter)}
                 className={cn(
-                  "text-xs font-medium w-6 h-5 flex items-center justify-center rounded transition-colors",
+                  "text-[10px] font-medium w-5 h-4 flex items-center justify-center rounded-sm transition-colors",
                   selectedLetter === letter 
                     ? "bg-primary text-primary-foreground" 
                     : availableLetters.has(letter)
-                      ? "text-foreground hover:bg-muted"
-                      : "text-muted-foreground/30"
+                      ? "text-foreground active:bg-muted"
+                      : "text-muted-foreground/20"
                 )}
                 data-testid={`letter-${letter}`}
               >

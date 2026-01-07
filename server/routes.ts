@@ -757,7 +757,7 @@ export async function registerRoutes(
       }
       
       const chapterPattern = /(?:^|\n)(CHAPTER\s+[IVXLCDM\d]+[.:\s].*?|Chapter\s+\d+[.:\s].*?)(?=\n)/gi;
-      const chapterMatches = [...fullText.matchAll(chapterPattern)];
+      const chapterMatches = Array.from(fullText.matchAll(chapterPattern));
       
       let chapters: { title: string; content: string }[] = [];
       
