@@ -219,6 +219,17 @@ export const notesRelations = relations(notes, ({ one }) => ({
   }),
 }));
 
+export const dailyDevotionals = pgTable("daily_devotionals", {
+  id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+  dayOfYear: integer("day_of_year").notNull().unique(),
+  title: varchar("title", { length: 255 }).notNull(),
+  scriptureReference: varchar("scripture_reference", { length: 100 }).notNull(),
+  scriptureText: text("scripture_text").notNull(),
+  reflection: text("reflection").notNull(),
+  prayer: text("prayer"),
+  author: varchar("author", { length: 100 }),
+});
+
 export const savedVersesRelations = relations(savedVerses, ({ one }) => ({
   verse: one(bibleVerses, {
     fields: [savedVerses.verseId],
@@ -242,6 +253,7 @@ export const insertSermonSchema = createInsertSchema(sermons).omit({ id: true, c
 export const insertNoteSchema = createInsertSchema(notes).omit({ id: true, createdAt: true });
 export const insertSavedVerseSchema = createInsertSchema(savedVerses).omit({ id: true, createdAt: true });
 export const insertUserPreferencesSchema = createInsertSchema(userPreferences).omit({ id: true });
+export const insertDailyDevotionalSchema = createInsertSchema(dailyDevotionals).omit({ id: true });
 export const insertDevotionalBookSchema = createInsertSchema(devotionalBooks).omit({ id: true });
 export const insertDevotionalChapterSchema = createInsertSchema(devotionalChapters).omit({ id: true });
 export const insertBookProgressSchema = createInsertSchema(bookProgress).omit({ id: true, lastReadAt: true });
@@ -279,6 +291,8 @@ export type SavedVerse = typeof savedVerses.$inferSelect;
 export type InsertSavedVerse = z.infer<typeof insertSavedVerseSchema>;
 export type UserPreferences = typeof userPreferences.$inferSelect;
 export type InsertUserPreferences = z.infer<typeof insertUserPreferencesSchema>;
+export type DailyDevotional = typeof dailyDevotionals.$inferSelect;
+export type InsertDailyDevotional = z.infer<typeof insertDailyDevotionalSchema>;
 export type DevotionalBook = typeof devotionalBooks.$inferSelect;
 export type InsertDevotionalBook = z.infer<typeof insertDevotionalBookSchema>;
 export type DevotionalChapter = typeof devotionalChapters.$inferSelect;
