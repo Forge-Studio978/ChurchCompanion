@@ -12,11 +12,11 @@ import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useAuth } from "@/hooks/use-auth";
 import { 
-  Book, Music, FileText, Highlighter, Trash2, Bookmark, FolderOpen, 
-  Search, Radio, ChevronRight, BookOpen, Clock
+  Music, FileText, Highlighter, Trash2, Bookmark, FolderOpen, 
+  Search, Radio, Clock, BookOpen
 } from "lucide-react";
-import { Link, useLocation } from "wouter";
-import type { BibleVerse, Hymn, Note, Highlight, DevotionalBook, Livestream, LivestreamNote } from "@shared/schema";
+import { Link } from "wouter";
+import type { BibleVerse, Hymn, Note, Highlight, Livestream, LivestreamNote } from "@shared/schema";
 
 interface SavedVerseWithVerse {
   id: number;
@@ -58,7 +58,6 @@ function formatLivestreamTime(seconds: number): string {
 export default function LibraryPage() {
   const { isAuthenticated, isLoading: authLoading } = useAuth();
   const { toast } = useToast();
-  const [, navigate] = useLocation();
   const [searchQuery, setSearchQuery] = useState("");
 
   const { data: savedVerses = [], isLoading: versesLoading } = useQuery<SavedVerseWithVerse[]>({
@@ -78,11 +77,6 @@ export default function LibraryPage() {
 
   const { data: notes = [], isLoading: notesLoading } = useQuery<NoteWithContext[]>({
     queryKey: ["/api/notes"],
-    enabled: isAuthenticated,
-  });
-
-  const { data: books = [], isLoading: booksLoading } = useQuery<DevotionalBook[]>({
-    queryKey: ["/api/devotional-books"],
     enabled: isAuthenticated,
   });
 
@@ -133,14 +127,6 @@ export default function LibraryPage() {
     },
   });
 
-  const deleteBookMutation = useMutation({
-    mutationFn: async (id: number) => apiRequest("DELETE", `/api/devotional-books/${id}`),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/devotional-books"] });
-      toast({ title: "Book removed from library" });
-    },
-  });
-
   const filteredNotes = searchQuery
     ? notes.filter(n => n.content.toLowerCase().includes(searchQuery.toLowerCase()))
     : notes;
@@ -184,7 +170,7 @@ export default function LibraryPage() {
             <FolderOpen className="h-10 w-10 text-primary" />
           </div>
           <h1 className="font-serif text-2xl font-semibold mb-2">Your Library</h1>
-          <p className="text-muted-foreground mb-8">Sign in to save verses, hymns, books, and notes</p>
+          <p className="text-muted-foreground mb-8">Sign in to save verses, hymns, and notes</p>
           <Button size="lg" asChild data-testid="button-sign-in">
             <a href="/api/login">Sign In</a>
           </Button>
@@ -209,16 +195,8 @@ export default function LibraryPage() {
           <p className="text-muted-foreground">Your saved content and notes</p>
         </div>
 
-        <Tabs defaultValue="books" className="w-full">
-          <TabsList className="w-full grid grid-cols-3 sm:grid-cols-6 mb-6 h-auto gap-1">
-            <TabsTrigger value="books" className="gap-2" data-testid="tab-books">
-              <Book className="h-4 w-4" />
-              <span className="hidden sm:inline">Devotionals</span>
-              <span className="sm:hidden">Books</span>
-              {books.length > 0 && (
-                <Badge variant="secondary" className="ml-1">{books.length}</Badge>
-              )}
-            </TabsTrigger>
+        <Tabs defaultValue="verses" className="w-full">
+          <TabsList className="w-full grid grid-cols-5 mb-6 h-auto gap-1">
             <TabsTrigger value="verses" className="gap-2" data-testid="tab-verses">
               <Bookmark className="h-4 w-4" />
               <span className="hidden sm:inline">Saved Verses</span>
@@ -251,79 +229,6 @@ export default function LibraryPage() {
               )}
             </TabsTrigger>
           </TabsList>
-
-          <TabsContent value="books">
-            <div className="mb-4">
-              <p className="text-sm text-muted-foreground">
-                Classic devotional books
-              </p>
-            </div>
-            {booksLoading ? (
-              <div className="grid gap-4 sm:grid-cols-2">
-                {Array.from({ length: 4 }).map((_, i) => (
-                  <Skeleton key={i} className="h-32 w-full" />
-                ))}
-              </div>
-            ) : books.length === 0 ? (
-              <EmptyState
-                icon={Book}
-                title="No books available"
-                description="Devotional books will appear here"
-              />
-            ) : (
-              <div className="grid gap-4 sm:grid-cols-2">
-                {books.map((book) => (
-                  <Card 
-                    key={book.id} 
-                    className="hover-elevate cursor-pointer group"
-                    data-testid={`book-card-${book.id}`}
-                  >
-                    <CardContent className="p-4">
-                      <div className="flex items-start justify-between gap-2">
-                        <div 
-                          className="flex-1 min-w-0"
-                          onClick={() => navigate(`/books/${book.id}`)}
-                        >
-                          <div className="flex items-center gap-2 mb-1">
-                            <BookOpen 
-                              className="h-5 w-5 flex-shrink-0" 
-                              style={{ color: book.coverColor || "#2c4a6e" }}
-                            />
-                            <h3 className="font-serif font-medium truncate">{book.title}</h3>
-                          </div>
-                          {book.author && (
-                            <p className="text-sm text-muted-foreground truncate">
-                              by {book.author}
-                            </p>
-                          )}
-                          <div className="flex items-center gap-2 mt-2">
-                            {book.source === "gutenberg" && (
-                              <Badge variant="outline" className="text-xs">Imported</Badge>
-                            )}
-                            <ChevronRight className="h-4 w-4 text-muted-foreground ml-auto" />
-                          </div>
-                        </div>
-                        {book.userId && (
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="opacity-0 group-hover:opacity-100 transition-opacity"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              deleteBookMutation.mutate(book.id);
-                            }}
-                            data-testid={`delete-book-${book.id}`}
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        )}
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            )}
-          </TabsContent>
 
           <TabsContent value="verses">
             {versesLoading ? (
@@ -467,7 +372,7 @@ export default function LibraryPage() {
                               </div>
                               {note.bibleReference && (
                                 <Badge variant="outline" className="gap-1 mb-2">
-                                  <Book className="h-3 w-3" />
+                                  <BookOpen className="h-3 w-3" />
                                   {note.bibleReference}
                                 </Badge>
                               )}
@@ -493,7 +398,7 @@ export default function LibraryPage() {
                 {filteredNotes.length > 0 && (
                   <>
                     <h3 className="font-medium text-sm text-muted-foreground flex items-center gap-2 mt-4">
-                      <Book className="h-4 w-4" />
+                      <BookOpen className="h-4 w-4" />
                       Bible Notes
                     </h3>
                     {filteredNotes.map((note) => (
@@ -504,7 +409,7 @@ export default function LibraryPage() {
                               <div className="flex items-center gap-2 mb-2">
                                 {note.verseId && !note.sermonId && (
                                   <Badge variant="outline" className="gap-1">
-                                    <Book className="h-3 w-3" />
+                                    <BookOpen className="h-3 w-3" />
                                     Bible
                                   </Badge>
                                 )}

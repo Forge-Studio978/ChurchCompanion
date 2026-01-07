@@ -10,7 +10,6 @@ import Landing from "@/pages/landing";
 import Home from "@/pages/home";
 import Bible from "@/pages/bible";
 import Hymns from "@/pages/hymns";
-import BookReader from "@/pages/book-reader";
 import LibraryPage from "@/pages/library";
 import LivestreamCompanion from "@/pages/livestream";
 import Settings from "@/pages/settings";
@@ -36,7 +35,6 @@ function Router() {
       <Route path="/" component={isAuthenticated ? Home : Landing} />
       <Route path="/bible" component={Bible} />
       <Route path="/hymns" component={Hymns} />
-      <Route path="/books/:id" component={BookReader} />
       <Route path="/library" component={LibraryPage} />
       <Route path="/livestream" component={LivestreamCompanion} />
       <Route path="/settings" component={Settings} />

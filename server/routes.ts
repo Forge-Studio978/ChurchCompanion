@@ -4,7 +4,6 @@ import { storage } from "./storage";
 import { setupAuth, isAuthenticated, registerAuthRoutes } from "./replit_integrations/auth";
 import { seedBibleData } from "./seed/bible";
 import { seedHymnsData } from "./seed/hymns";
-import { seedDevotionalBooks } from "./seed/devotional-books";
 import { 
   createTranscript, 
   getTranscriptByLivestream, 
@@ -22,7 +21,6 @@ export async function registerRoutes(
 
   await seedBibleData();
   await seedHymnsData();
-  await seedDevotionalBooks();
 
   app.get("/api/verse-of-day", async (req, res) => {
     try {
@@ -656,118 +654,6 @@ export async function registerRoutes(
     } catch (error) {
       console.error("Error removing saved verse:", error);
       res.status(500).json({ message: "Failed to remove saved verse" });
-    }
-  });
-
-  app.get("/api/devotional-books", isAuthenticated, async (req: any, res) => {
-    try {
-      const userId = req.user.claims.sub;
-      const books = await storage.getAllUserBooks(userId);
-      res.json(books);
-    } catch (error) {
-      console.error("Error getting devotional books:", error);
-      res.status(500).json({ message: "Failed to get devotional books" });
-    }
-  });
-
-  app.delete("/api/devotional-books/:id", isAuthenticated, async (req: any, res) => {
-    try {
-      const userId = req.user.claims.sub;
-      const id = parseInt(req.params.id);
-      await storage.deleteDevotionalBook(id, userId);
-      res.json({ success: true });
-    } catch (error) {
-      console.error("Error deleting devotional book:", error);
-      res.status(500).json({ message: "Failed to delete devotional book" });
-    }
-  });
-
-  app.get("/api/devotional-books/:id", async (req, res) => {
-    try {
-      const id = parseInt(req.params.id);
-      const book = await storage.getDevotionalBook(id);
-      if (!book) {
-        return res.status(404).json({ message: "Book not found" });
-      }
-      const chapters = await storage.getDevotionalChapters(id);
-      res.json({ book, chapters });
-    } catch (error) {
-      console.error("Error getting devotional book:", error);
-      res.status(500).json({ message: "Failed to get devotional book" });
-    }
-  });
-
-  app.get("/api/devotional-chapters/:id", async (req, res) => {
-    try {
-      const id = parseInt(req.params.id);
-      const chapter = await storage.getDevotionalChapter(id);
-      if (!chapter) {
-        return res.status(404).json({ message: "Chapter not found" });
-      }
-      res.json(chapter);
-    } catch (error) {
-      console.error("Error getting chapter:", error);
-      res.status(500).json({ message: "Failed to get chapter" });
-    }
-  });
-
-  app.get("/api/book-progress/:bookId", isAuthenticated, async (req: any, res) => {
-    try {
-      const userId = req.user.claims.sub;
-      const bookId = parseInt(req.params.bookId);
-      const progress = await storage.getBookProgress(userId, bookId);
-      res.json(progress || null);
-    } catch (error) {
-      console.error("Error getting book progress:", error);
-      res.status(500).json({ message: "Failed to get book progress" });
-    }
-  });
-
-  app.post("/api/book-progress", isAuthenticated, async (req: any, res) => {
-    try {
-      const userId = req.user.claims.sub;
-      const { bookId, currentChapterId } = req.body;
-      const progress = await storage.updateBookProgress({ userId, bookId, currentChapterId });
-      res.json(progress);
-    } catch (error) {
-      console.error("Error updating book progress:", error);
-      res.status(500).json({ message: "Failed to update book progress" });
-    }
-  });
-
-  app.get("/api/book-highlights/:chapterId", isAuthenticated, async (req: any, res) => {
-    try {
-      const userId = req.user.claims.sub;
-      const chapterId = parseInt(req.params.chapterId);
-      const highlights = await storage.getBookHighlights(userId, chapterId);
-      res.json(highlights);
-    } catch (error) {
-      console.error("Error getting book highlights:", error);
-      res.status(500).json({ message: "Failed to get book highlights" });
-    }
-  });
-
-  app.post("/api/book-highlights", isAuthenticated, async (req: any, res) => {
-    try {
-      const userId = req.user.claims.sub;
-      const { chapterId, highlightedText, color, note } = req.body;
-      const highlight = await storage.createBookHighlight({ userId, chapterId, highlightedText, color: color || "yellow", note });
-      res.json(highlight);
-    } catch (error) {
-      console.error("Error creating book highlight:", error);
-      res.status(500).json({ message: "Failed to create book highlight" });
-    }
-  });
-
-  app.delete("/api/book-highlights/:id", isAuthenticated, async (req: any, res) => {
-    try {
-      const userId = req.user.claims.sub;
-      const id = parseInt(req.params.id);
-      await storage.deleteBookHighlight(id, userId);
-      res.json({ success: true });
-    } catch (error) {
-      console.error("Error deleting book highlight:", error);
-      res.status(500).json({ message: "Failed to delete book highlight" });
     }
   });
 
