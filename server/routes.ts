@@ -4,6 +4,7 @@ import { storage } from "./storage";
 import { setupAuth, isAuthenticated, registerAuthRoutes } from "./replit_integrations/auth";
 import { seedBibleData } from "./seed/bible";
 import { seedHymnsData } from "./seed/hymns";
+import { seedDailyDevotionals } from "./seed/daily-devotionals";
 import { 
   createTranscript, 
   getTranscriptByLivestream, 
@@ -21,6 +22,7 @@ export async function registerRoutes(
 
   await seedBibleData();
   await seedHymnsData();
+  await seedDailyDevotionals();
 
   app.get("/api/verse-of-day", async (req, res) => {
     try {
@@ -32,6 +34,24 @@ export async function registerRoutes(
     } catch (error) {
       console.error("Error getting verse of day:", error);
       res.status(500).json({ message: "Failed to get verse of day" });
+    }
+  });
+
+  app.get("/api/daily-devotional", async (req, res) => {
+    try {
+      const now = new Date();
+      const start = new Date(now.getFullYear(), 0, 0);
+      const diff = now.getTime() - start.getTime();
+      const dayOfYear = Math.floor(diff / (1000 * 60 * 60 * 24));
+      
+      const devotional = await storage.getDailyDevotional(dayOfYear);
+      if (!devotional) {
+        return res.status(404).json({ message: "No devotional available for today" });
+      }
+      res.json(devotional);
+    } catch (error) {
+      console.error("Error getting daily devotional:", error);
+      res.status(500).json({ message: "Failed to get daily devotional" });
     }
   });
 
