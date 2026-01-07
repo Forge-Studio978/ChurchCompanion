@@ -54,6 +54,12 @@ const HIGHLIGHT_COLORS = [
   { name: "purple", class: "bg-purple-200 dark:bg-purple-500/30" },
 ];
 
+const TRANSLATION_LABELS: Record<string, string> = {
+  KJV: "KJV - English",
+  LSG: "LSG - French",
+  RV1909: "RV1909 - Spanish",
+};
+
 export default function Bible() {
   const { isAuthenticated } = useAuth();
   const { toast } = useToast();
@@ -228,7 +234,7 @@ export default function Bible() {
                 </SelectTrigger>
                 <SelectContent>
                   {availableTranslations.map((t) => (
-                    <SelectItem key={t} value={t}>{t}</SelectItem>
+                    <SelectItem key={t} value={t}>{TRANSLATION_LABELS[t] || t}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>

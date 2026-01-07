@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?><song><title>Aleluya reinas Tú poderoso</title>
+<lyrics>[V1]
+ // Aleluya, aleluya,
+ Reinas Tú poderoso Dios. //
+ Aleluya, santo, santo,
+ El Señor Dios poderoso;
+ // Digno eres Tú. //
+
+[V2]
+ Tú eres santo, santo,
+ El Señor Dios poderoso;
+ // Digno eres Tú. //
+ Amén.
+
+[V3]
+ Tú eres santo, santo,
+ El Señor Dios poderoso;
+ // Digno eres Tú. //</lyrics>
+<presentation>V1 V2 V1 V3 V2</presentation>
+<author>Marco Barrientos</author>
+<key>A</key>
+</song>
