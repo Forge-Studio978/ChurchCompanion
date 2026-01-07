@@ -40,9 +40,9 @@ import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useAuth } from "@/hooks/use-auth";
 import { 
   Plus, Radio, Video, Trash2, Clock, ChevronLeft, Book, Music, 
-  FileText, Play, Pause, Volume2, Maximize, Link2, BookOpen
+  FileText, Play, Pause, Volume2, Maximize, Link2, BookOpen, Mic, Loader2, Search
 } from "lucide-react";
-import type { Livestream, LivestreamNote, BibleVerse, Hymn, DetectedVerse, DetectedHymn } from "@shared/schema";
+import type { Livestream, LivestreamNote, BibleVerse, Hymn, DetectedVerse, DetectedHymn, Transcript, TranscriptSegment } from "@shared/schema";
 
 const livestreamFormSchema = z.object({
   title: z.string().min(1, "Title is required"),
@@ -110,6 +110,8 @@ export default function LivestreamCompanion() {
   const [addHymnDialogOpen, setAddHymnDialogOpen] = useState(false);
   const [manualVerseRef, setManualVerseRef] = useState("");
   const [hymnSearchQuery, setHymnSearchQuery] = useState("");
+  const [transcriptSearch, setTranscriptSearch] = useState("");
+  const [transcriptText, setTranscriptText] = useState("");
   const videoRef = useRef<HTMLVideoElement>(null);
 
   const form = useForm<LivestreamFormData>({
@@ -155,6 +157,33 @@ export default function LivestreamCompanion() {
       return res.json();
     },
     enabled: !!selectedLivestream,
+  });
+
+  const { data: transcriptData } = useQuery<{ status: string; segments: TranscriptSegment[] }>({
+    queryKey: ["/api/livestreams", selectedLivestream?.id, "transcript"],
+    queryFn: async () => {
+      if (!selectedLivestream) return { status: "none", segments: [] };
+      const res = await fetch(`/api/livestreams/${selectedLivestream.id}/transcript`);
+      return res.json();
+    },
+    enabled: !!selectedLivestream,
+  });
+
+  const analyzeMutation = useMutation({
+    mutationFn: async ({ text, segments }: { text: string; segments?: { startSeconds: number; endSeconds: number; text: string }[] }) => {
+      if (!selectedLivestream) throw new Error("No livestream selected");
+      return apiRequest("POST", `/api/livestreams/${selectedLivestream.id}/transcript/analyze`, { text, segments });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/livestreams", selectedLivestream?.id, "transcript"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/livestreams", selectedLivestream?.id, "detected-verses"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/livestreams", selectedLivestream?.id, "detected-hymns"] });
+      setTranscriptText("");
+      toast({ title: "Transcript analyzed successfully" });
+    },
+    onError: () => {
+      toast({ title: "Failed to analyze transcript", variant: "destructive" });
+    },
   });
 
   const { data: hymns = [] } = useQuery<Hymn[]>({
@@ -384,6 +413,10 @@ export default function LivestreamCompanion() {
                   <Music className="h-4 w-4" />
                   Hymns
                 </TabsTrigger>
+                <TabsTrigger value="transcript" className="gap-1" data-testid="tab-transcript">
+                  <Mic className="h-4 w-4" />
+                  Transcript
+                </TabsTrigger>
               </TabsList>
 
               <TabsContent value="notes" className="flex-1 flex flex-col min-h-0 mt-0">
@@ -542,6 +575,81 @@ export default function LivestreamCompanion() {
                     </div>
                   )}
                 </ScrollArea>
+              </TabsContent>
+
+              <TabsContent value="transcript" className="flex-1 flex flex-col min-h-0 mt-0">
+                <div className="flex items-center justify-between mb-2 gap-2">
+                  <p className="text-sm text-muted-foreground">AI Transcript</p>
+                </div>
+                
+                {transcriptData?.status === "completed" && transcriptData.segments.length > 0 ? (
+                  <>
+                    <div className="mb-2">
+                      <div className="relative">
+                        <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                        <Input
+                          value={transcriptSearch}
+                          onChange={(e) => setTranscriptSearch(e.target.value)}
+                          placeholder="Search transcript..."
+                          className="pl-8"
+                          data-testid="input-transcript-search"
+                        />
+                      </div>
+                    </div>
+                    <ScrollArea className="flex-1 max-h-[400px] lg:max-h-none">
+                      <div className="space-y-1 pr-4">
+                        {transcriptData.segments
+                          .filter(s => !transcriptSearch || s.text.toLowerCase().includes(transcriptSearch.toLowerCase()))
+                          .map((segment, i) => (
+                            <div 
+                              key={i} 
+                              className="flex gap-2 p-2 rounded hover-elevate cursor-pointer"
+                              onClick={() => handleNoteTimestampClick(segment.startSeconds)}
+                              data-testid={`transcript-segment-${i}`}
+                            >
+                              <span className="text-xs text-primary font-mono flex-shrink-0">
+                                {formatTimestamp(segment.startSeconds)}
+                              </span>
+                              <p className="text-sm">{segment.text}</p>
+                            </div>
+                          ))}
+                      </div>
+                    </ScrollArea>
+                  </>
+                ) : (
+                  <div className="flex-1 flex flex-col">
+                    <div className="py-4 text-center text-muted-foreground">
+                      <Mic className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                      <p className="text-sm mb-2">Paste transcript text to analyze</p>
+                      <p className="text-xs">AI will detect Bible verses and hymns mentioned</p>
+                    </div>
+                    <Textarea
+                      value={transcriptText}
+                      onChange={(e) => setTranscriptText(e.target.value)}
+                      placeholder="Paste sermon transcript here..."
+                      className="flex-1 min-h-[150px] resize-none text-sm"
+                      data-testid="input-transcript-text"
+                    />
+                    <Button 
+                      onClick={() => analyzeMutation.mutate({ text: transcriptText })}
+                      disabled={!transcriptText.trim() || analyzeMutation.isPending}
+                      className="mt-2"
+                      data-testid="button-analyze-transcript"
+                    >
+                      {analyzeMutation.isPending ? (
+                        <>
+                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                          Analyzing...
+                        </>
+                      ) : (
+                        <>
+                          <Mic className="h-4 w-4 mr-2" />
+                          Analyze with AI
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                )}
               </TabsContent>
             </Tabs>
           </div>

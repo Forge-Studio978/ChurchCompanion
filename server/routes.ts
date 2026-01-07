@@ -5,6 +5,13 @@ import { setupAuth, isAuthenticated, registerAuthRoutes } from "./replit_integra
 import { seedBibleData } from "./seed/bible";
 import { seedHymnsData } from "./seed/hymns";
 import { seedDevotionalBooks } from "./seed/devotional-books";
+import { 
+  createTranscript, 
+  getTranscriptByLivestream, 
+  getTranscriptSegments,
+  analyzeTranscriptText,
+  saveTranscriptSegments 
+} from "./services/ai-transcription";
 
 export async function registerRoutes(
   httpServer: Server,
@@ -458,6 +465,74 @@ export async function registerRoutes(
     } catch (error) {
       console.error("Error adding detected hymn:", error);
       res.status(500).json({ message: "Failed to add detected hymn" });
+    }
+  });
+
+  app.get("/api/livestreams/:id/transcript", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const livestreamId = parseInt(req.params.id);
+      const livestream = await storage.getLivestream(livestreamId, userId);
+      if (!livestream) {
+        return res.status(404).json({ message: "Livestream not found" });
+      }
+      const transcript = await getTranscriptByLivestream(livestreamId);
+      if (!transcript) {
+        return res.json({ status: "none", segments: [] });
+      }
+      const segments = await getTranscriptSegments(transcript.id);
+      res.json({ ...transcript, segments });
+    } catch (error) {
+      console.error("Error getting transcript:", error);
+      res.status(500).json({ message: "Failed to get transcript" });
+    }
+  });
+
+  app.post("/api/livestreams/:id/transcript", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const livestreamId = parseInt(req.params.id);
+      const livestream = await storage.getLivestream(livestreamId, userId);
+      if (!livestream) {
+        return res.status(404).json({ message: "Livestream not found" });
+      }
+      const existingTranscript = await getTranscriptByLivestream(livestreamId);
+      if (existingTranscript) {
+        return res.json({ message: "Transcript already exists", transcriptId: existingTranscript.id });
+      }
+      const transcriptId = await createTranscript(livestreamId);
+      res.json({ transcriptId, status: "pending" });
+    } catch (error) {
+      console.error("Error creating transcript:", error);
+      res.status(500).json({ message: "Failed to create transcript" });
+    }
+  });
+
+  app.post("/api/livestreams/:id/transcript/analyze", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const livestreamId = parseInt(req.params.id);
+      const livestream = await storage.getLivestream(livestreamId, userId);
+      if (!livestream) {
+        return res.status(404).json({ message: "Livestream not found" });
+      }
+      const { text, segments } = req.body;
+      
+      let transcript = await getTranscriptByLivestream(livestreamId);
+      if (!transcript) {
+        const transcriptId = await createTranscript(livestreamId);
+        transcript = { id: transcriptId, livestreamId, status: "pending", createdAt: new Date(), completedAt: null };
+      }
+      
+      if (segments?.length) {
+        await saveTranscriptSegments(transcript.id, segments);
+      }
+      
+      const result = await analyzeTranscriptText(livestreamId, transcript.id, text || "");
+      res.json(result);
+    } catch (error) {
+      console.error("Error analyzing transcript:", error);
+      res.status(500).json({ message: "Failed to analyze transcript" });
     }
   });
 
