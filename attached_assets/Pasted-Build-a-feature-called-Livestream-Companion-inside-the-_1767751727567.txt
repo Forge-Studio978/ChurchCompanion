@@ -1,0 +1,326 @@
+Build a feature called Livestream Companion inside the Christian World app. This feature enhances livestream worship and sermon viewing using AI transcription, verse recognition, hymn detection, and timestamped note-taking. It must work with both live streams and uploaded sermon videos.
+
+🎯 Purpose
+
+The Livestream Companion should allow users to:
+
+Watch livestream or recorded sermons
+
+View real-time AI transcription
+
+Automatically detect Bible verses referenced in the sermon
+
+Automatically detect hymns or worship songs being sung
+
+Take timestamped notes tied to the video
+
+Save notes, highlights, verses, and hymns into the user’s Library
+
+Re-open saved items and jump to the original video moment
+
+Rename the “Sermons” section to:
+
+Livestream Companion
+
+everywhere in the app.
+
+🔹 Core UI Layout
+Main Screen Structure
+
+Top: Video player (supports livestream + uploaded video)
+
+Bottom / Side: Companion Panel with tabs:
+
+📖 Verses
+
+🎵 Hymns
+
+📝 Notes
+
+📜 Transcript
+
+The panel updates in real-time as the livestream plays.
+
+🤖 AI Features
+1️⃣ AI Transcription
+
+AI must:
+
+Convert livestream audio to real-time transcript
+
+Timestamp each transcript line
+
+Save the transcript to the database
+
+Allow scrolling and playback syncing
+
+Allow tap-to-seek:
+
+tapping a transcript line jumps to that moment
+
+Users can search inside the transcript.
+
+2️⃣ AI Bible Verse Detection
+
+AI should:
+
+Detect when a Bible passage is referenced verbally
+
+Support:
+
+“John three sixteen”
+
+“John 3:16”
+
+paraphrase mentions
+
+Pull the correct scripture from the Bible database
+
+Display verses in the Verses tab
+
+Show the timestamp when first mentioned
+
+Allow user actions:
+
+highlight the verse
+
+take notes
+
+bookmark/save
+
+When saved, store:
+
+verse reference
+
+video source
+
+timestamp
+
+note text (if any)
+
+user id
+
+Saved highlights must appear in:
+
+Library → Highlights
+
+and link back to both the Bible passage and video timestamp.
+
+3️⃣ AI Hymn / Song Detection
+
+The AI should:
+
+Detect when a hymn or worship song is sung
+
+Attempt to match it to the hymns catalog
+
+If matched:
+
+display hymn title + lyrics
+
+link to hymn audio if available
+
+If NOT matched:
+
+transcribe lyrics live
+
+display transcription
+
+Users can:
+
+follow along
+
+favorite the hymn
+
+add timestamped notes
+
+Hymn-related notes are stored in Library.
+
+📝 Notes System (Must Be Deeply Integrated)
+
+Users must be able to create timestamped notes in three contexts:
+
+A. General Livestream Notes
+
+open Notes tab
+
+free type
+
+automatically attach timestamp
+
+B. Verse-Linked Notes
+
+notes saved while viewing a verse
+
+must attach:
+
+verse reference
+
+timestamp
+
+video id
+
+C. Hymn-Linked Notes
+
+same as above but hymn-based
+
+📚 Library Integration Requirements
+The Library must contain:
+
+Bible Highlights
+
+Livestream Notes
+
+Hymn Notes
+
+General Notes
+
+Devotional / Book Notes (if enabled elsewhere)
+
+Saved items MUST show:
+
+Content type (Bible / Hymn / Video / Book)
+
+Reference
+
+Timestamp (if video-based)
+
+Source info
+
+Clicking a saved item should:
+
+reopen the video
+
+auto-seek to timestamp
+
+OR open the Bible passage
+
+OR open the hymn
+depending on context
+
+📖 Bible & Book Highlight Parity
+
+Highlights in:
+
+Bible
+
+Devotional books
+
+Livestream Companion
+
+must behave consistently.
+
+Users should:
+
+highlight text
+
+annotate
+
+reopen later
+
+sync to account
+
+🗄 Database Behavior (high-level)
+
+Create tables (or equivalent structure):
+
+videos
+
+transcripts
+
+transcript_segments
+
+detected_verses
+
+detected_hymns
+
+notes
+
+highlights
+
+hymns_library
+
+bible_passages
+
+library_items
+
+devotional_books
+
+book_annotations
+
+timestamps
+
+Every saved object must store relational references.
+
+🔍 Search & Recall
+
+Users can:
+
+search notes by keyword
+
+search verses
+
+search hymns
+
+filter by livestream
+
+📱 UX Requirements
+
+clean sacred-feeling UI
+
+distraction-free
+
+smooth animation
+
+mobile-first responsive
+
+dark/light theme
+
+🔐 Sync
+
+All user data syncs to the cloud and persists across sessions.
+
+Offline mode allowed for cached content.
+
+🧪 Testing Scenarios (Must Pass)
+
+A user hears “Romans 10:9”
+
+AI detects verse
+
+Displays it
+
+User highlights it
+
+Highlight appears in Library
+
+Clicking library item reopens timestamp
+
+A hymn begins
+
+AI matches the hymn
+
+Shows lyrics
+
+User saves notes
+
+Notes re-open later
+
+Transcript line tapped
+
+video jumps accurately
+
+Notes from livestream show timestamps and source
+
+🎯 Final Goal
+
+Deliver an AI-powered livestream study companion that:
+
+✔ detects verses
+✔ detects hymns
+✔ transcribes sermons
+✔ supports deep note-taking
+✔ organizes learning in the Library
+✔ strengthens spiritual growth
+
+This feature should feel natural, reverent, intelligent, and beautifully integrated.
