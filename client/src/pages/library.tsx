@@ -654,11 +654,11 @@ export default function LibraryPage() {
         </Tabs>
 
         <Dialog open={showAddBook} onOpenChange={setShowAddBook}>
-          <DialogContent className="max-w-lg">
+          <DialogContent className="max-w-sm sm:max-w-md mx-4">
             <DialogHeader>
               <DialogTitle>Add a Book</DialogTitle>
               <DialogDescription>
-                Search Project Gutenberg for Christian books and devotionals
+                Search Project Gutenberg for Christian books
               </DialogDescription>
             </DialogHeader>
             <div className="space-y-4">
@@ -672,31 +672,32 @@ export default function LibraryPage() {
                   data-testid="input-search-gutenberg"
                 />
               </div>
-              <ScrollArea className="max-h-[50vh]">
+              <ScrollArea className="max-h-[40vh]">
                 {isSearching ? (
-                  <div className="space-y-3">
+                  <div className="space-y-3 pr-3">
                     {Array.from({ length: 3 }).map((_, i) => (
-                      <Skeleton key={i} className="h-20 w-full" />
+                      <Skeleton key={i} className="h-16 w-full" />
                     ))}
                   </div>
                 ) : gutenbergResults.results.length === 0 ? (
-                  <div className="py-8 text-center text-muted-foreground">
+                  <div className="py-8 text-center text-muted-foreground text-sm">
                     {gutenbergQuery.length >= 2 
-                      ? "No books found. Try a different search term."
+                      ? "No books found. Try a different search."
                       : "Type at least 2 characters to search"}
                   </div>
                 ) : (
-                  <div className="space-y-3">
+                  <div className="space-y-2 pr-3">
                     {gutenbergResults.results.map((book) => (
-                      <Card key={book.gutenbergId} data-testid={`gutenberg-result-${book.gutenbergId}`}>
-                        <CardContent className="p-4">
-                          <div className="flex items-start justify-between gap-4">
-                            <div className="flex-1 min-w-0">
-                              <h4 className="font-medium truncate">{book.title}</h4>
-                              <p className="text-sm text-muted-foreground">{book.author}</p>
+                      <Card key={book.gutenbergId} className="overflow-hidden" data-testid={`gutenberg-result-${book.gutenbergId}`}>
+                        <CardContent className="p-3">
+                          <div className="space-y-2">
+                            <div className="min-w-0">
+                              <h4 className="font-medium text-sm leading-tight line-clamp-2">{book.title}</h4>
+                              <p className="text-xs text-muted-foreground truncate mt-0.5">{book.author}</p>
                             </div>
                             <Button
                               size="sm"
+                              className="w-full"
                               disabled={!book.downloadUrl || importBookMutation.isPending}
                               onClick={() => importBookMutation.mutate(book)}
                               data-testid={`import-book-${book.gutenbergId}`}
@@ -706,7 +707,7 @@ export default function LibraryPage() {
                               ) : (
                                 <>
                                   <Download className="h-4 w-4 mr-1" />
-                                  Add
+                                  Add to Library
                                 </>
                               )}
                             </Button>

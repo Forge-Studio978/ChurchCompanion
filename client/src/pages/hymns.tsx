@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Layout } from "@/components/layout";
 import { Button } from "@/components/ui/button";
@@ -24,9 +24,12 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useAuth } from "@/hooks/use-auth";
-import { Search, Heart, Music, Plus, ListMusic, MoreVertical } from "lucide-react";
+import { Search, Heart, Music, Plus, ListMusic, MoreVertical, ChevronLeft, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { Hymn, SavedHymn, Playlist } from "@shared/schema";
+
+const HYMNS_PER_PAGE = 20;
+const ALPHABET = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("");
 
 export default function Hymns() {
   const { isAuthenticated } = useAuth();
@@ -34,6 +37,8 @@ export default function Hymns() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedHymn, setSelectedHymn] = useState<Hymn | null>(null);
   const [selectedTag, setSelectedTag] = useState<string | null>(null);
+  const [selectedLetter, setSelectedLetter] = useState<string | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
   const [createPlaylistOpen, setCreatePlaylistOpen] = useState(false);
   const [newPlaylistTitle, setNewPlaylistTitle] = useState("");
 
@@ -94,13 +99,42 @@ export default function Hymns() {
 
   const isHymnSaved = (hymnId: number) => savedHymns.some((s) => s.hymnId === hymnId);
 
-  const filteredHymns = hymns.filter((hymn) => {
-    const matchesSearch = !searchQuery || 
-      hymn.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      hymn.lyrics.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesTag = !selectedTag || hymn.tags?.includes(selectedTag);
-    return matchesSearch && matchesTag;
-  });
+  const filteredHymns = useMemo(() => {
+    return hymns.filter((hymn) => {
+      const matchesSearch = !searchQuery || 
+        hymn.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        hymn.lyrics.toLowerCase().includes(searchQuery.toLowerCase());
+      const matchesTag = !selectedTag || hymn.tags?.includes(selectedTag);
+      const matchesLetter = !selectedLetter || hymn.title.toUpperCase().startsWith(selectedLetter);
+      return matchesSearch && matchesTag && matchesLetter;
+    });
+  }, [hymns, searchQuery, selectedTag, selectedLetter]);
+
+  const totalPages = Math.ceil(filteredHymns.length / HYMNS_PER_PAGE);
+  const paginatedHymns = filteredHymns.slice(
+    (currentPage - 1) * HYMNS_PER_PAGE,
+    currentPage * HYMNS_PER_PAGE
+  );
+
+  const availableLetters = useMemo(() => {
+    const letters = new Set<string>();
+    hymns.forEach(hymn => {
+      const firstLetter = hymn.title.charAt(0).toUpperCase();
+      if (ALPHABET.includes(firstLetter)) {
+        letters.add(firstLetter);
+      }
+    });
+    return letters;
+  }, [hymns]);
+
+  const handleLetterClick = (letter: string) => {
+    if (selectedLetter === letter) {
+      setSelectedLetter(null);
+    } else {
+      setSelectedLetter(letter);
+    }
+    setCurrentPage(1);
+  };
 
   const formatLyrics = (lyrics: string) => {
     return lyrics.split("\n\n").map((verse, i) => (
@@ -170,119 +204,168 @@ export default function Hymns() {
           )}
         </div>
 
-        {isLoading ? (
-          <div className="space-y-4">
-            {Array.from({ length: 8 }).map((_, i) => (
-              <Card key={i}>
-                <CardContent className="p-4">
-                  <Skeleton className="h-6 w-3/4 mb-2" />
-                  <Skeleton className="h-4 w-1/2" />
-                </CardContent>
-              </Card>
+        <div className="flex gap-2">
+          <div className="sm:hidden flex flex-col items-center py-2 sticky top-0">
+            {ALPHABET.map((letter) => (
+              <button
+                key={letter}
+                onClick={() => handleLetterClick(letter)}
+                disabled={!availableLetters.has(letter)}
+                className={cn(
+                  "text-xs font-medium w-6 h-5 flex items-center justify-center rounded transition-colors",
+                  selectedLetter === letter 
+                    ? "bg-primary text-primary-foreground" 
+                    : availableLetters.has(letter)
+                      ? "text-foreground hover:bg-muted"
+                      : "text-muted-foreground/30"
+                )}
+                data-testid={`letter-${letter}`}
+              >
+                {letter}
+              </button>
             ))}
           </div>
-        ) : filteredHymns.length === 0 ? (
-          <Card>
-            <CardContent className="p-12 text-center">
-              <Music className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
-              <p className="text-muted-foreground">
-                {searchQuery || selectedTag ? "No hymns found matching your search" : "No hymns available yet"}
-              </p>
-            </CardContent>
-          </Card>
-        ) : (
-          <div className="space-y-3">
-            {filteredHymns.map((hymn) => (
-              <Card
-                key={hymn.id}
-                className="cursor-pointer transition-all hover:shadow-md hover:border-primary/30"
-                onClick={() => setSelectedHymn(hymn)}
-                data-testid={`hymn-card-${hymn.id}`}
-              >
-                <CardContent className="p-4">
-                  <div className="flex items-start justify-between gap-4">
-                    <div className="flex-1 min-w-0">
-                      <h3 className="font-semibold text-lg truncate">{hymn.title}</h3>
-                      <div className="flex items-center gap-2 text-sm text-muted-foreground mt-1 flex-wrap">
-                        {hymn.composer && <span>{hymn.composer}</span>}
-                        {hymn.year && <span>({hymn.year})</span>}
-                        {hymn.meter && <span className="hidden sm:inline">Meter: {hymn.meter}</span>}
-                      </div>
-                      {hymn.tags && hymn.tags.length > 0 && (
-                        <div className="flex gap-1 mt-2 flex-wrap">
-                          {hymn.tags.slice(0, 3).map((tag) => (
-                            <Badge key={tag} variant="secondary" className="text-xs">
-                              {tag}
-                            </Badge>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                    {isAuthenticated && (
-                      <div className="flex items-center gap-1">
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            saveMutation.mutate(hymn.id);
-                          }}
-                          data-testid={`save-hymn-${hymn.id}`}
-                        >
-                          <Heart
-                            className={cn(
-                              "h-5 w-5 transition-colors",
-                              isHymnSaved(hymn.id) && "fill-red-500 text-red-500"
-                            )}
-                          />
-                        </Button>
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
-                            <Button variant="ghost" size="icon" data-testid={`menu-hymn-${hymn.id}`}>
-                              <MoreVertical className="h-4 w-4" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            {playlists.length > 0 ? (
-                              <>
-                                <div className="px-2 py-1.5 text-xs font-medium text-muted-foreground">
-                                  Add to Playlist
-                                </div>
-                                {playlists.map((playlist) => (
+
+          <div className="flex-1 min-w-0">
+            {isLoading ? (
+              <div className="space-y-3">
+                {Array.from({ length: 8 }).map((_, i) => (
+                  <Card key={i}>
+                    <CardContent className="p-4">
+                      <Skeleton className="h-5 w-3/4 mb-2" />
+                      <Skeleton className="h-4 w-1/2" />
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            ) : filteredHymns.length === 0 ? (
+              <Card>
+                <CardContent className="p-12 text-center">
+                  <Music className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
+                  <p className="text-muted-foreground">
+                    {searchQuery || selectedTag || selectedLetter ? "No hymns found" : "No hymns available yet"}
+                  </p>
+                </CardContent>
+              </Card>
+            ) : (
+              <>
+                <div className="flex items-center justify-between mb-3 text-sm text-muted-foreground">
+                  <span>{filteredHymns.length} hymns{selectedLetter ? ` starting with "${selectedLetter}"` : ""}</span>
+                  {totalPages > 1 && <span>Page {currentPage} of {totalPages}</span>}
+                </div>
+                <div className="space-y-2">
+                  {paginatedHymns.map((hymn) => (
+                    <Card
+                      key={hymn.id}
+                      className="cursor-pointer transition-all hover:shadow-md hover:border-primary/30"
+                      onClick={() => setSelectedHymn(hymn)}
+                      data-testid={`hymn-card-${hymn.id}`}
+                    >
+                      <CardContent className="p-3 sm:p-4">
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="flex-1 min-w-0">
+                            <h3 className="font-semibold text-base sm:text-lg truncate">{hymn.title}</h3>
+                            <div className="flex items-center gap-2 text-xs sm:text-sm text-muted-foreground mt-1 flex-wrap">
+                              {hymn.composer && <span className="truncate">{hymn.composer}</span>}
+                              {hymn.year && <span>({hymn.year})</span>}
+                            </div>
+                          </div>
+                          {isAuthenticated && (
+                            <div className="flex items-center shrink-0">
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  saveMutation.mutate(hymn.id);
+                                }}
+                                data-testid={`save-hymn-${hymn.id}`}
+                              >
+                                <Heart
+                                  className={cn(
+                                    "h-4 w-4 transition-colors",
+                                    isHymnSaved(hymn.id) && "fill-red-500 text-red-500"
+                                  )}
+                                />
+                              </Button>
+                              <DropdownMenu>
+                                <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
+                                  <Button variant="ghost" size="icon" className="h-8 w-8" data-testid={`menu-hymn-${hymn.id}`}>
+                                    <MoreVertical className="h-4 w-4" />
+                                  </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end">
+                                  {playlists.length > 0 && (
+                                    <>
+                                      <div className="px-2 py-1.5 text-xs font-medium text-muted-foreground">
+                                        Add to Playlist
+                                      </div>
+                                      {playlists.map((playlist) => (
+                                        <DropdownMenuItem
+                                          key={playlist.id}
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            addToPlaylistMutation.mutate({ playlistId: playlist.id, hymnId: hymn.id });
+                                          }}
+                                          data-testid={`add-to-playlist-${playlist.id}`}
+                                        >
+                                          <ListMusic className="h-4 w-4 mr-2" />
+                                          {playlist.title}
+                                        </DropdownMenuItem>
+                                      ))}
+                                      <DropdownMenuSeparator />
+                                    </>
+                                  )}
                                   <DropdownMenuItem
-                                    key={playlist.id}
                                     onClick={(e) => {
                                       e.stopPropagation();
-                                      addToPlaylistMutation.mutate({ playlistId: playlist.id, hymnId: hymn.id });
+                                      setCreatePlaylistOpen(true);
                                     }}
-                                    data-testid={`add-to-playlist-${playlist.id}`}
                                   >
-                                    <ListMusic className="h-4 w-4 mr-2" />
-                                    {playlist.title}
+                                    <Plus className="h-4 w-4 mr-2" />
+                                    New Playlist
                                   </DropdownMenuItem>
-                                ))}
-                                <DropdownMenuSeparator />
-                              </>
-                            ) : null}
-                            <DropdownMenuItem
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setCreatePlaylistOpen(true);
-                              }}
-                            >
-                              <Plus className="h-4 w-4 mr-2" />
-                              New Playlist
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </div>
-                    )}
+                                </DropdownMenuContent>
+                              </DropdownMenu>
+                            </div>
+                          )}
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+                {totalPages > 1 && (
+                  <div className="flex items-center justify-center gap-2 mt-4 py-4">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                      disabled={currentPage === 1}
+                      data-testid="button-prev-page"
+                    >
+                      <ChevronLeft className="h-4 w-4" />
+                      Prev
+                    </Button>
+                    <span className="text-sm text-muted-foreground px-2">
+                      {currentPage} / {totalPages}
+                    </span>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                      disabled={currentPage === totalPages}
+                      data-testid="button-next-page"
+                    >
+                      Next
+                      <ChevronRight className="h-4 w-4" />
+                    </Button>
                   </div>
-                </CardContent>
-              </Card>
-            ))}
+                )}
+              </>
+            )}
           </div>
-        )}
+        </div>
 
         <Dialog open={!!selectedHymn} onOpenChange={(open) => !open && setSelectedHymn(null)}>
           <DialogContent className="max-w-2xl max-h-[90vh]">
