@@ -205,20 +205,20 @@ export default function Hymns() {
         </div>
 
         <div className="flex gap-2 relative">
-          <div className="sm:hidden fixed right-1 top-16 bottom-24 z-50 overflow-y-auto py-1 bg-background/90 backdrop-blur-md rounded-xl shadow-md border scrollbar-hide">
-            <div className="flex flex-col">
+          <div className="sm:hidden fixed right-2 z-50 overflow-y-auto py-2 bg-background/95 backdrop-blur-md rounded-2xl shadow-lg border scrollbar-hide" style={{ top: '200px', bottom: '100px' }}>
+            <div className="flex flex-col items-center gap-0.5 px-1">
               {ALPHABET.map((letter) => (
                 <button
                   key={letter}
                   onClick={() => handleLetterClick(letter)}
                   disabled={!availableLetters.has(letter)}
                   className={cn(
-                    "text-sm font-medium w-8 min-h-[44px] flex items-center justify-center transition-colors shrink-0",
+                    "text-xs font-semibold w-7 min-h-[28px] flex items-center justify-center transition-colors shrink-0 rounded-md",
                     selectedLetter === letter 
-                      ? "text-primary font-bold bg-primary/15 rounded-md" 
+                      ? "text-primary-foreground bg-primary" 
                       : availableLetters.has(letter)
-                        ? "text-foreground/80"
-                        : "text-muted-foreground/25"
+                        ? "text-foreground/70"
+                        : "text-muted-foreground/20"
                   )}
                   data-testid={`letter-${letter}`}
                 >
