@@ -43,18 +43,31 @@ function parseHymnXml(content: string): ParsedHymn | null {
   }
 }
 
-async function importHymnsFromDirectory(directory: string, language: string, languageName: string): Promise<number> {
+async function importHymnsFromDirectory(directory: string, language: string, languageName: string, clearExisting: boolean = false): Promise<number> {
   if (!fs.existsSync(directory)) {
     console.log(`Hymn directory not found: ${directory}`);
     return 0;
   }
 
-  const files = fs.readdirSync(directory);
+  const files = fs.readdirSync(directory).filter(f => !f.startsWith('.'));
+  
+  if (files.length === 0) {
+    return 0;
+  }
+
+  if (clearExisting) {
+    await db.delete(hymns).where(eq(hymns.language, language));
+    console.log(`Cleared existing ${languageName} hymns`);
+  }
+
   let importedCount = 0;
 
   for (const file of files) {
     try {
       const filePath = path.join(directory, file);
+      const stat = fs.statSync(filePath);
+      if (stat.isDirectory()) continue;
+      
       const content = fs.readFileSync(filePath, 'utf-8');
       const parsed = parseHymnXml(content);
 
@@ -96,8 +109,12 @@ async function importHymnsFromDirectory(directory: string, language: string, lan
 export async function seedHymnsFromFiles() {
   console.log("Checking for hymn files to import...");
   
-  const spanishCount = await importHymnsFromDirectory("/tmp/spanish_hymns/es", "es", "Spanish");
-  const frenchCount = await importHymnsFromDirectory("/tmp/french_hymns/fr", "fr", "French");
+  const projectRoot = process.cwd();
+  const frenchDir = path.join(projectRoot, "attached_assets/hymns_xml/fr");
+  const spanishDir = path.join(projectRoot, "attached_assets/hymns_xml/es");
+  
+  const frenchCount = await importHymnsFromDirectory(frenchDir, "fr", "French", true);
+  const spanishCount = await importHymnsFromDirectory(spanishDir, "es", "Spanish", true);
   
   if (spanishCount === 0 && frenchCount === 0) {
     console.log("No new hymns to import from files");
