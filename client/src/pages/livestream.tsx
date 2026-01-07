@@ -133,8 +133,10 @@ export default function LivestreamCompanion() {
     queryKey: ["/api/livestreams", selectedLivestream?.id, "notes"],
     queryFn: async () => {
       if (!selectedLivestream) return [];
-      const res = await fetch(`/api/livestreams/${selectedLivestream.id}/notes`);
-      return res.json();
+      const res = await fetch(`/api/livestreams/${selectedLivestream.id}/notes`, { credentials: "include" });
+      if (!res.ok) return [];
+      const data = await res.json();
+      return Array.isArray(data) ? data : [];
     },
     enabled: !!selectedLivestream,
   });
@@ -143,8 +145,10 @@ export default function LivestreamCompanion() {
     queryKey: ["/api/livestreams", selectedLivestream?.id, "detected-verses"],
     queryFn: async () => {
       if (!selectedLivestream) return [];
-      const res = await fetch(`/api/livestreams/${selectedLivestream.id}/detected-verses`);
-      return res.json();
+      const res = await fetch(`/api/livestreams/${selectedLivestream.id}/detected-verses`, { credentials: "include" });
+      if (!res.ok) return [];
+      const data = await res.json();
+      return Array.isArray(data) ? data : [];
     },
     enabled: !!selectedLivestream,
   });
@@ -153,8 +157,10 @@ export default function LivestreamCompanion() {
     queryKey: ["/api/livestreams", selectedLivestream?.id, "detected-hymns"],
     queryFn: async () => {
       if (!selectedLivestream) return [];
-      const res = await fetch(`/api/livestreams/${selectedLivestream.id}/detected-hymns`);
-      return res.json();
+      const res = await fetch(`/api/livestreams/${selectedLivestream.id}/detected-hymns`, { credentials: "include" });
+      if (!res.ok) return [];
+      const data = await res.json();
+      return Array.isArray(data) ? data : [];
     },
     enabled: !!selectedLivestream,
   });
@@ -163,7 +169,8 @@ export default function LivestreamCompanion() {
     queryKey: ["/api/livestreams", selectedLivestream?.id, "transcript"],
     queryFn: async () => {
       if (!selectedLivestream) return { status: "none", segments: [] };
-      const res = await fetch(`/api/livestreams/${selectedLivestream.id}/transcript`);
+      const res = await fetch(`/api/livestreams/${selectedLivestream.id}/transcript`, { credentials: "include" });
+      if (!res.ok) return { status: "none", segments: [] };
       return res.json();
     },
     enabled: !!selectedLivestream,
