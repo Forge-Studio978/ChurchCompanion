@@ -32,7 +32,7 @@ export default function Settings() {
           <h1 className="font-serif text-2xl font-semibold mb-2">Settings</h1>
           <p className="text-muted-foreground mb-6">Sign in to access settings</p>
           <Button asChild data-testid="button-sign-in">
-            <a href="/api/login">Sign In</a>
+            <a href="/auth">Sign In</a>
           </Button>
         </div>
       </Layout>

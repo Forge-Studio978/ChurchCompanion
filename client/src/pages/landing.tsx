@@ -42,7 +42,7 @@ export default function Landing() {
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Button size="lg" asChild className="text-base px-8" data-testid="button-get-started">
-              <a href="/api/login">Get Started</a>
+              <a href="/auth">Get Started</a>
             </Button>
             <Button size="lg" variant="outline" asChild className="text-base px-8" data-testid="button-learn-more">
               <a href="#features">Learn More</a>

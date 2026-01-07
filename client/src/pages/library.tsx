@@ -172,7 +172,7 @@ export default function LibraryPage() {
           <h1 className="font-serif text-2xl font-semibold mb-2">Your Library</h1>
           <p className="text-muted-foreground mb-8">Sign in to save verses, hymns, and notes</p>
           <Button size="lg" asChild data-testid="button-sign-in">
-            <a href="/api/login">Sign In</a>
+            <a href="/auth">Sign In</a>
           </Button>
         </div>
       </Layout>

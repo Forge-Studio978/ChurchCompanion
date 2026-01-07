@@ -1,7 +1,7 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { setupAuth, isAuthenticated, registerAuthRoutes } from "./replit_integrations/auth";
+import { isAuthenticated, optionalAuth } from "./middleware/supabase-auth";
 import { seedBibleData } from "./seed/bible";
 import { seedHymnsData } from "./seed/hymns";
 import { seedDailyDevotionals } from "./seed/daily-devotionals";
@@ -20,14 +20,24 @@ export async function registerRoutes(
   httpServer: Server,
   app: Express
 ): Promise<Server> {
-  await setupAuth(app);
-  registerAuthRoutes(app);
 
   app.get("/api/config/supabase", (req, res) => {
     res.json({
       url: process.env.SUPABASE_URL,
       anonKey: process.env.SUPABASE_ANON_KEY,
     });
+  });
+
+  app.get("/api/auth/user", isAuthenticated, async (req: any, res) => {
+    try {
+      res.json({
+        id: req.supabaseUser.id,
+        email: req.supabaseUser.email,
+      });
+    } catch (error) {
+      console.error("Error getting user:", error);
+      res.status(500).json({ message: "Failed to get user" });
+    }
   });
 
   await seedBibleData();
@@ -120,7 +130,7 @@ export async function registerRoutes(
 
   app.get("/api/highlights", isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.supabaseUser!.id;
       const highlights = await storage.getHighlights(userId);
       res.json(highlights);
     } catch (error) {
@@ -131,7 +141,7 @@ export async function registerRoutes(
 
   app.get("/api/highlights/full", isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.supabaseUser!.id;
       const highlights = await storage.getHighlightsWithVerses(userId);
       res.json(highlights);
     } catch (error) {
@@ -142,7 +152,7 @@ export async function registerRoutes(
 
   app.post("/api/highlights", isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.supabaseUser!.id;
       const { verseId, color } = req.body;
       const highlight = await storage.createHighlight({ userId, verseId, color });
       res.json(highlight);
@@ -154,7 +164,7 @@ export async function registerRoutes(
 
   app.delete("/api/highlights/:id", isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.supabaseUser!.id;
       const id = parseInt(req.params.id);
       await storage.deleteHighlight(id, userId);
       res.json({ success: true });
@@ -212,7 +222,7 @@ export async function registerRoutes(
 
   app.get("/api/saved-hymns", isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.supabaseUser!.id;
       const saved = await storage.getSavedHymns(userId);
       res.json(saved);
     } catch (error) {
@@ -223,7 +233,7 @@ export async function registerRoutes(
 
   app.get("/api/saved-hymns/full", isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.supabaseUser!.id;
       const saved = await storage.getSavedHymnsWithHymns(userId);
       res.json(saved);
     } catch (error) {
@@ -234,7 +244,7 @@ export async function registerRoutes(
 
   app.post("/api/saved-hymns", isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.supabaseUser!.id;
       const { hymnId } = req.body;
       const saved = await storage.createSavedHymn({ userId, hymnId });
       res.json(saved);
@@ -246,7 +256,7 @@ export async function registerRoutes(
 
   app.delete("/api/saved-hymns/:hymnId", isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.supabaseUser!.id;
       const hymnId = parseInt(req.params.hymnId);
       await storage.deleteSavedHymn(hymnId, userId);
       res.json({ success: true });
@@ -258,7 +268,7 @@ export async function registerRoutes(
 
   app.get("/api/playlists", isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.supabaseUser!.id;
       const playlistsList = await storage.getPlaylists(userId);
       res.json(playlistsList);
     } catch (error) {
@@ -269,7 +279,7 @@ export async function registerRoutes(
 
   app.get("/api/playlists/:id", isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.supabaseUser!.id;
       const id = parseInt(req.params.id);
       const result = await storage.getPlaylistWithHymns(id, userId);
       if (!result) {
@@ -284,7 +294,7 @@ export async function registerRoutes(
 
   app.post("/api/playlists", isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.supabaseUser!.id;
       const { title } = req.body;
       const playlist = await storage.createPlaylist({ userId, title });
       res.json(playlist);
@@ -296,7 +306,7 @@ export async function registerRoutes(
 
   app.delete("/api/playlists/:id", isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.supabaseUser!.id;
       const id = parseInt(req.params.id);
       await storage.deletePlaylist(id, userId);
       res.json({ success: true });
@@ -332,7 +342,7 @@ export async function registerRoutes(
 
   app.get("/api/livestreams", isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.supabaseUser!.id;
       const streams = await storage.getLivestreams(userId);
       res.json(streams);
     } catch (error) {
@@ -343,7 +353,7 @@ export async function registerRoutes(
 
   app.get("/api/livestreams/:id", isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.supabaseUser!.id;
       const id = parseInt(req.params.id);
       const stream = await storage.getLivestream(id, userId);
       if (!stream) {
@@ -358,7 +368,7 @@ export async function registerRoutes(
 
   app.post("/api/livestreams", isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.supabaseUser!.id;
       const { title, description, sourceUrl, sourceType } = req.body;
       const stream = await storage.createLivestream({
         userId,
@@ -376,7 +386,7 @@ export async function registerRoutes(
 
   app.patch("/api/livestreams/:id/position", isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.supabaseUser!.id;
       const id = parseInt(req.params.id);
       const { position } = req.body;
       await storage.updateLivestreamPosition(id, userId, position);
@@ -389,7 +399,7 @@ export async function registerRoutes(
 
   app.delete("/api/livestreams/:id", isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.supabaseUser!.id;
       const id = parseInt(req.params.id);
       await storage.deleteLivestream(id, userId);
       res.json({ success: true });
@@ -401,7 +411,7 @@ export async function registerRoutes(
 
   app.get("/api/livestreams/:id/notes", isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.supabaseUser!.id;
       const livestreamId = parseInt(req.params.id);
       const notes = await storage.getLivestreamNotes(livestreamId, userId);
       res.json(notes);
@@ -413,7 +423,7 @@ export async function registerRoutes(
 
   app.get("/api/livestream-notes", isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.supabaseUser!.id;
       const notes = await storage.getLivestreamNotesWithContext(userId);
       res.json(notes);
     } catch (error) {
@@ -424,7 +434,7 @@ export async function registerRoutes(
 
   app.post("/api/livestream-notes", isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.supabaseUser!.id;
       const { livestreamId, timestampSeconds, content, bibleReference, hymnId } = req.body;
       const note = await storage.createLivestreamNote({
         userId,
@@ -443,7 +453,7 @@ export async function registerRoutes(
 
   app.delete("/api/livestream-notes/:id", isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.supabaseUser!.id;
       const id = parseInt(req.params.id);
       await storage.deleteLivestreamNote(id, userId);
       res.json({ success: true });
@@ -455,7 +465,7 @@ export async function registerRoutes(
 
   app.get("/api/livestreams/:id/detected-verses", isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.supabaseUser!.id;
       const livestreamId = parseInt(req.params.id);
       const livestream = await storage.getLivestream(livestreamId, userId);
       if (!livestream) {
@@ -471,7 +481,7 @@ export async function registerRoutes(
 
   app.post("/api/livestreams/:id/detected-verses", isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.supabaseUser!.id;
       const livestreamId = parseInt(req.params.id);
       const livestream = await storage.getLivestream(livestreamId, userId);
       if (!livestream) {
@@ -492,7 +502,7 @@ export async function registerRoutes(
 
   app.get("/api/livestreams/:id/detected-hymns", isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.supabaseUser!.id;
       const livestreamId = parseInt(req.params.id);
       const livestream = await storage.getLivestream(livestreamId, userId);
       if (!livestream) {
@@ -508,7 +518,7 @@ export async function registerRoutes(
 
   app.post("/api/livestreams/:id/detected-hymns", isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.supabaseUser!.id;
       const livestreamId = parseInt(req.params.id);
       const livestream = await storage.getLivestream(livestreamId, userId);
       if (!livestream) {
@@ -530,7 +540,7 @@ export async function registerRoutes(
 
   app.get("/api/livestreams/:id/transcript", isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.supabaseUser!.id;
       const livestreamId = parseInt(req.params.id);
       const livestream = await storage.getLivestream(livestreamId, userId);
       if (!livestream) {
@@ -550,7 +560,7 @@ export async function registerRoutes(
 
   app.post("/api/livestreams/:id/transcript", isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.supabaseUser!.id;
       const livestreamId = parseInt(req.params.id);
       const livestream = await storage.getLivestream(livestreamId, userId);
       if (!livestream) {
@@ -570,7 +580,7 @@ export async function registerRoutes(
 
   app.post("/api/livestreams/:id/transcript/analyze", isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.supabaseUser!.id;
       const livestreamId = parseInt(req.params.id);
       const livestream = await storage.getLivestream(livestreamId, userId);
       if (!livestream) {
@@ -598,7 +608,7 @@ export async function registerRoutes(
 
   app.get("/api/sermons", isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.supabaseUser!.id;
       const sermons = await storage.getSermons(userId);
       res.json(sermons);
     } catch (error) {
@@ -609,7 +619,7 @@ export async function registerRoutes(
 
   app.post("/api/sermons", isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.supabaseUser!.id;
       const { title, description, livestreamUrl, audioUrl, textContent } = req.body;
       const sermon = await storage.createSermon({
         userId,
@@ -628,7 +638,7 @@ export async function registerRoutes(
 
   app.delete("/api/sermons/:id", isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.supabaseUser!.id;
       const id = parseInt(req.params.id);
       await storage.deleteSermon(id, userId);
       res.json({ success: true });
@@ -640,7 +650,7 @@ export async function registerRoutes(
 
   app.get("/api/notes", isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.supabaseUser!.id;
       const sermonId = req.query.sermonId;
       if (sermonId) {
         const notes = await storage.getNotesForSermon(parseInt(sermonId as string), userId);
@@ -656,7 +666,7 @@ export async function registerRoutes(
 
   app.post("/api/notes", isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.supabaseUser!.id;
       const { sermonId, verseId, content, timestamp } = req.body;
       const note = await storage.createNote({
         userId,
@@ -674,7 +684,7 @@ export async function registerRoutes(
 
   app.delete("/api/notes/:id", isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.supabaseUser!.id;
       const id = parseInt(req.params.id);
       await storage.deleteNote(id, userId);
       res.json({ success: true });
@@ -686,7 +696,7 @@ export async function registerRoutes(
 
   app.get("/api/saved-verses", isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.supabaseUser!.id;
       const saved = await storage.getSavedVersesWithVerses(userId);
       res.json(saved);
     } catch (error) {
@@ -697,7 +707,7 @@ export async function registerRoutes(
 
   app.post("/api/saved-verses", isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.supabaseUser!.id;
       const { verseId } = req.body;
       const saved = await storage.createSavedVerse({ userId, verseId });
       res.json(saved);
@@ -709,7 +719,7 @@ export async function registerRoutes(
 
   app.delete("/api/saved-verses/:id", isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.supabaseUser!.id;
       const id = parseInt(req.params.id);
       await storage.deleteSavedVerse(id, userId);
       res.json({ success: true });
