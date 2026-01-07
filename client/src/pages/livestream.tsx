@@ -582,7 +582,13 @@ export default function LivestreamCompanion() {
                   <p className="text-sm text-muted-foreground">AI Transcript</p>
                 </div>
                 
-                {transcriptData?.status === "completed" && transcriptData.segments.length > 0 ? (
+                {transcriptData?.status === "processing" || analyzeMutation.isPending ? (
+                  <div className="flex-1 flex flex-col items-center justify-center py-8">
+                    <Loader2 className="h-8 w-8 animate-spin text-primary mb-4" />
+                    <p className="text-sm font-medium">Analyzing transcript...</p>
+                    <p className="text-xs text-muted-foreground mt-1">Detecting Bible verses and hymns</p>
+                  </div>
+                ) : transcriptData?.status === "completed" && transcriptData.segments.length > 0 ? (
                   <>
                     <div className="mb-2">
                       <div className="relative">
@@ -632,21 +638,12 @@ export default function LivestreamCompanion() {
                     />
                     <Button 
                       onClick={() => analyzeMutation.mutate({ text: transcriptText })}
-                      disabled={!transcriptText.trim() || analyzeMutation.isPending}
+                      disabled={!transcriptText.trim() || analyzeMutation.isPending || transcriptData?.status === "processing"}
                       className="mt-2"
                       data-testid="button-analyze-transcript"
                     >
-                      {analyzeMutation.isPending ? (
-                        <>
-                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                          Analyzing...
-                        </>
-                      ) : (
-                        <>
-                          <Mic className="h-4 w-4 mr-2" />
-                          Analyze with AI
-                        </>
-                      )}
+                      <Mic className="h-4 w-4 mr-2" />
+                      Analyze with AI
                     </Button>
                   </div>
                 )}
