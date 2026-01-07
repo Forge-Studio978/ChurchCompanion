@@ -40,11 +40,15 @@ export async function registerRoutes(
   app.get("/api/daily-devotional", async (req, res) => {
     try {
       const now = new Date();
-      const start = new Date(now.getFullYear(), 0, 0);
-      const diff = now.getTime() - start.getTime();
-      const dayOfYear = Math.floor(diff / (1000 * 60 * 60 * 24));
+      const startOfYear = Date.UTC(now.getUTCFullYear(), 0, 0);
+      const nowUTC = Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate());
+      const dayOfYear = Math.floor((nowUTC - startOfYear) / (1000 * 60 * 60 * 24));
       
-      const devotional = await storage.getDailyDevotional(dayOfYear);
+      let devotional = await storage.getDailyDevotional(dayOfYear);
+      if (!devotional) {
+        const fallbackDay = ((dayOfYear - 1) % 31) + 1;
+        devotional = await storage.getDailyDevotional(fallbackDay);
+      }
       if (!devotional) {
         return res.status(404).json({ message: "No devotional available for today" });
       }

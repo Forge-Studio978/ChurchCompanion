@@ -4,9 +4,9 @@ import { Layout } from "@/components/layout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Book, Music, Library, Mic, ChevronRight, RefreshCw } from "lucide-react";
+import { Book, Music, Library, Mic, ChevronRight, RefreshCw, Sunrise } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
-import type { BibleVerse } from "@shared/schema";
+import type { BibleVerse, DailyDevotional } from "@shared/schema";
 
 const quickNavItems = [
   {
@@ -38,6 +38,66 @@ const quickNavItems = [
     color: "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400",
   },
 ];
+
+function DailyDevotionalCard() {
+  const { data: devotional, isLoading } = useQuery<DailyDevotional>({
+    queryKey: ["/api/daily-devotional"],
+  });
+
+  if (isLoading) {
+    return (
+      <Card className="bg-gradient-to-br from-amber-500/5 to-amber-500/10 border-amber-500/20">
+        <CardHeader className="pb-3">
+          <Skeleton className="h-4 w-32" />
+        </CardHeader>
+        <CardContent>
+          <Skeleton className="h-5 w-3/4 mb-3" />
+          <Skeleton className="h-4 w-full mb-2" />
+          <Skeleton className="h-4 w-5/6 mb-2" />
+          <Skeleton className="h-4 w-4/5" />
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (!devotional) {
+    return null;
+  }
+
+  return (
+    <Card className="bg-gradient-to-br from-amber-500/5 to-amber-500/10 border-amber-500/20">
+      <CardHeader className="pb-2 flex flex-row items-center gap-3">
+        <div className="w-10 h-10 rounded-full bg-amber-500/20 flex items-center justify-center">
+          <Sunrise className="h-5 w-5 text-amber-600 dark:text-amber-400" />
+        </div>
+        <div className="flex-1">
+          <CardTitle className="text-sm font-medium text-amber-700 dark:text-amber-400">Daily Devotional</CardTitle>
+          <p className="text-xs text-muted-foreground">{devotional.scriptureReference}</p>
+        </div>
+      </CardHeader>
+      <CardContent className="pt-0 space-y-4">
+        <h3 className="font-serif text-lg font-semibold" data-testid="text-devotional-title">{devotional.title}</h3>
+        
+        <blockquote className="font-serif text-base italic border-l-2 border-amber-500/30 pl-3 text-muted-foreground" data-testid="text-devotional-scripture">
+          "{devotional.scriptureText}"
+        </blockquote>
+        
+        <p className="text-sm leading-relaxed" data-testid="text-devotional-reflection">
+          {devotional.reflection}
+        </p>
+        
+        {devotional.prayer && (
+          <div className="bg-background/50 rounded-lg p-3 border border-amber-500/10">
+            <p className="text-xs font-medium text-amber-700 dark:text-amber-400 mb-1">Prayer</p>
+            <p className="text-sm italic text-muted-foreground" data-testid="text-devotional-prayer">
+              {devotional.prayer}
+            </p>
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
 
 function VerseOfDay() {
   const { data: verse, isLoading, refetch, isRefetching } = useQuery<BibleVerse>({
@@ -123,6 +183,8 @@ export default function Home() {
         </div>
 
         <div className="space-y-6">
+          <DailyDevotionalCard />
+          
           <VerseOfDay />
 
           <div className="grid gap-3 grid-cols-2">
