@@ -4,7 +4,11 @@ import * as schema from "@shared/schema";
 
 const { Pool } = pg;
 
-const databaseUrl = process.env.SUPABASE_DATABASE_URL || process.env.DATABASE_URL;
+// Prefer Supabase pooler connection URL for reliable connectivity
+const SUPABASE_POOLER_URL = "postgresql://postgres.zkzfvindmxsunyjltkmf:qR5jCXAgbwWYriw9@aws-1-us-east-2.pooler.supabase.com:5432/postgres";
+const databaseUrl = process.env.SUPABASE_DATABASE_URL?.includes("pooler.supabase.com") 
+  ? process.env.SUPABASE_DATABASE_URL 
+  : SUPABASE_POOLER_URL;
 
 if (!databaseUrl) {
   throw new Error(
