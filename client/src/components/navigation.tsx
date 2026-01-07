@@ -14,28 +14,32 @@ export function BottomNav() {
   const [location] = useLocation();
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-50 bg-card border-t border-border md:hidden">
-      <div className="flex items-center justify-around py-2">
-        {navItems.map((item) => {
-          const isActive = location === item.path || 
-            (item.path !== "/" && location.startsWith(item.path));
-          return (
-            <Link
-              key={item.path}
-              href={item.path}
-              className={cn(
-                "flex flex-col items-center gap-1 px-4 py-2 rounded-lg transition-colors",
-                isActive 
-                  ? "text-primary" 
-                  : "text-muted-foreground hover:text-foreground"
-              )}
-              data-testid={`nav-${item.label.toLowerCase()}`}
-            >
-              <item.icon className="h-5 w-5" />
-              <span className="text-xs font-medium">{item.label}</span>
-            </Link>
-          );
-        })}
+    <nav className="fixed bottom-0 left-0 right-0 z-50 md:hidden pb-safe">
+      <div className="mx-2 mb-2">
+        <div className="bg-card/95 backdrop-blur-xl border border-border/40 rounded-2xl shadow-lg">
+          <div className="flex items-center justify-around py-2.5 px-1">
+            {navItems.map((item) => {
+              const isActive = location === item.path || 
+                (item.path !== "/" && location.startsWith(item.path));
+              return (
+                <Link
+                  key={item.path}
+                  href={item.path}
+                  className={cn(
+                    "flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-xl transition-colors",
+                    isActive 
+                      ? "text-primary bg-primary/10" 
+                      : "text-muted-foreground"
+                  )}
+                  data-testid={`nav-${item.label.toLowerCase()}`}
+                >
+                  <item.icon className="h-5 w-5" />
+                  <span className={cn("text-[10px]", isActive ? "font-semibold" : "font-medium")}>{item.label}</span>
+                </Link>
+              );
+            })}
+          </div>
+        </div>
       </div>
     </nav>
   );

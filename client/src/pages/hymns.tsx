@@ -205,25 +205,27 @@ export default function Hymns() {
         </div>
 
         <div className="flex gap-2 relative">
-          <div className="sm:hidden fixed right-2 top-1/2 -translate-y-1/2 z-50 flex flex-col items-center py-1 bg-background/80 backdrop-blur-sm rounded-full shadow-md border">
-            {ALPHABET.map((letter) => (
-              <button
-                key={letter}
-                onClick={() => handleLetterClick(letter)}
-                disabled={!availableLetters.has(letter)}
-                className={cn(
-                  "text-[10px] font-medium w-5 h-4 flex items-center justify-center rounded-sm transition-colors",
-                  selectedLetter === letter 
-                    ? "bg-primary text-primary-foreground" 
-                    : availableLetters.has(letter)
-                      ? "text-foreground active:bg-muted"
-                      : "text-muted-foreground/20"
-                )}
-                data-testid={`letter-${letter}`}
-              >
-                {letter}
-              </button>
-            ))}
+          <div className="sm:hidden fixed right-1 top-16 bottom-24 z-50 overflow-y-auto py-1 bg-background/90 backdrop-blur-md rounded-xl shadow-md border scrollbar-hide">
+            <div className="flex flex-col">
+              {ALPHABET.map((letter) => (
+                <button
+                  key={letter}
+                  onClick={() => handleLetterClick(letter)}
+                  disabled={!availableLetters.has(letter)}
+                  className={cn(
+                    "text-sm font-medium w-8 min-h-[44px] flex items-center justify-center transition-colors shrink-0",
+                    selectedLetter === letter 
+                      ? "text-primary font-bold bg-primary/15 rounded-md" 
+                      : availableLetters.has(letter)
+                        ? "text-foreground/80"
+                        : "text-muted-foreground/25"
+                  )}
+                  data-testid={`letter-${letter}`}
+                >
+                  {letter}
+                </button>
+              ))}
+            </div>
           </div>
 
           <div className="flex-1 min-w-0">

@@ -672,11 +672,11 @@ export default function LibraryPage() {
                   data-testid="input-search-gutenberg"
                 />
               </div>
-              <ScrollArea className="max-h-[40vh]">
+              <ScrollArea className="h-[50vh]">
                 {isSearching ? (
                   <div className="space-y-3 pr-3">
                     {Array.from({ length: 3 }).map((_, i) => (
-                      <Skeleton key={i} className="h-16 w-full" />
+                      <Skeleton key={i} className="h-20 w-full" />
                     ))}
                   </div>
                 ) : gutenbergResults.results.length === 0 ? (
@@ -688,7 +688,7 @@ export default function LibraryPage() {
                 ) : (
                   <div className="space-y-2 pr-3">
                     {gutenbergResults.results.map((book) => (
-                      <Card key={book.gutenbergId} className="overflow-hidden" data-testid={`gutenberg-result-${book.gutenbergId}`}>
+                      <Card key={book.gutenbergId} data-testid={`gutenberg-result-${book.gutenbergId}`}>
                         <CardContent className="p-3">
                           <div className="space-y-2">
                             <div className="min-w-0">
