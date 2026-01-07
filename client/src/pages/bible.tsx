@@ -30,7 +30,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useAuth } from "@/hooks/use-auth";
-import { ChevronLeft, ChevronRight, Highlighter, Bookmark, PenLine, Search, X } from "lucide-react";
+import { ChevronLeft, ChevronRight, Highlighter, Bookmark, PenLine, Search, X, BookOpen } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { BibleVerse, Highlight } from "@shared/schema";
 
@@ -71,15 +71,30 @@ export default function Bible() {
   const [noteContent, setNoteContent] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
   const [showSearch, setShowSearch] = useState(false);
+  const [translation, setTranslation] = useState("KJV");
   const verseRefs = useRef<Map<number, HTMLElement>>(new Map());
+
+  const { data: availableTranslations = ["KJV"] } = useQuery<string[]>({
+    queryKey: ["/api/bible/translations"],
+  });
   
   const { data: verses = [], isLoading } = useQuery<BibleVerse[]>({
-    queryKey: ["/api/bible", book, chapter],
+    queryKey: ["/api/bible", book, chapter, translation],
+    queryFn: async () => {
+      const res = await fetch(`/api/bible/${encodeURIComponent(book)}/${chapter}?translation=${translation}`);
+      if (!res.ok) throw new Error("Failed to fetch verses");
+      return res.json();
+    },
     enabled: !!book && !!chapter,
   });
 
   const { data: chapterCount = 1 } = useQuery<number>({
-    queryKey: ["/api/bible/chapters", book],
+    queryKey: ["/api/bible/chapters", book, translation],
+    queryFn: async () => {
+      const res = await fetch(`/api/bible/chapters/${encodeURIComponent(book)}?translation=${translation}`);
+      if (!res.ok) throw new Error("Failed to fetch chapter count");
+      return res.json();
+    },
     enabled: !!book,
   });
 
@@ -89,7 +104,12 @@ export default function Bible() {
   });
 
   const { data: searchResults = [], isLoading: isSearching } = useQuery<BibleVerse[]>({
-    queryKey: ["/api/bible/search", searchQuery],
+    queryKey: ["/api/bible/search", searchQuery, translation],
+    queryFn: async () => {
+      const res = await fetch(`/api/bible/search/${encodeURIComponent(searchQuery)}?translation=${translation}`);
+      if (!res.ok) throw new Error("Failed to search");
+      return res.json();
+    },
     enabled: searchQuery.length > 2,
   });
 
@@ -189,7 +209,7 @@ export default function Bible() {
               </Select>
 
               <Select value={chapter.toString()} onValueChange={(v) => setChapter(parseInt(v))}>
-                <SelectTrigger className="w-[100px] sm:w-[120px]" data-testid="select-chapter">
+                <SelectTrigger className="w-[80px] sm:w-[100px]" data-testid="select-chapter">
                   <SelectValue placeholder="Ch." />
                 </SelectTrigger>
                 <SelectContent>
@@ -198,6 +218,18 @@ export default function Bible() {
                       <SelectItem key={c} value={c.toString()}>{c}</SelectItem>
                     ))}
                   </ScrollArea>
+                </SelectContent>
+              </Select>
+
+              <Select value={translation} onValueChange={setTranslation}>
+                <SelectTrigger className="w-[80px] sm:w-[90px]" data-testid="select-translation">
+                  <BookOpen className="h-4 w-4 mr-1 shrink-0 hidden sm:block" />
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {availableTranslations.map((t) => (
+                    <SelectItem key={t} value={t}>{t}</SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
 

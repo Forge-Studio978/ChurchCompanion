@@ -61,10 +61,21 @@ export async function registerRoutes(
     }
   });
 
+  app.get("/api/bible/translations", async (req, res) => {
+    try {
+      const translations = await storage.getAvailableTranslations();
+      res.json(translations);
+    } catch (error) {
+      console.error("Error getting translations:", error);
+      res.status(500).json({ message: "Failed to get translations" });
+    }
+  });
+
   app.get("/api/bible/chapters/:book", async (req, res) => {
     try {
       const { book } = req.params;
-      const count = await storage.getChapterCount(book);
+      const translation = (req.query.translation as string) || "KJV";
+      const count = await storage.getChapterCount(book, translation);
       res.json(count);
     } catch (error) {
       console.error("Error getting chapter count:", error);
@@ -75,7 +86,8 @@ export async function registerRoutes(
   app.get("/api/bible/search/:query", async (req, res) => {
     try {
       const { query } = req.params;
-      const verses = await storage.searchBibleVerses(query);
+      const translation = (req.query.translation as string) || "KJV";
+      const verses = await storage.searchBibleVerses(query, translation);
       res.json(verses);
     } catch (error) {
       console.error("Error searching Bible:", error);
@@ -86,7 +98,8 @@ export async function registerRoutes(
   app.get("/api/bible/:book/:chapter", async (req, res) => {
     try {
       const { book, chapter } = req.params;
-      const verses = await storage.getBibleVerses(book, parseInt(chapter));
+      const translation = (req.query.translation as string) || "KJV";
+      const verses = await storage.getBibleVerses(book, parseInt(chapter), translation);
       res.json(verses);
     } catch (error) {
       console.error("Error getting Bible verses:", error);

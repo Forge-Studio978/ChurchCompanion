@@ -18,9 +18,10 @@ import { eq, and, like, or, ilike, asc, desc, sql } from "drizzle-orm";
 
 export interface IStorage {
   getVerseOfDay(): Promise<BibleVerse | undefined>;
-  getBibleVerses(book: string, chapter: number): Promise<BibleVerse[]>;
-  getChapterCount(book: string): Promise<number>;
-  searchBibleVerses(query: string): Promise<BibleVerse[]>;
+  getBibleVerses(book: string, chapter: number, translation?: string): Promise<BibleVerse[]>;
+  getChapterCount(book: string, translation?: string): Promise<number>;
+  searchBibleVerses(query: string, translation?: string): Promise<BibleVerse[]>;
+  getAvailableTranslations(): Promise<string[]>;
   getBibleVerse(id: number): Promise<BibleVerse | undefined>;
   insertBibleVerse(verse: InsertBibleVerse): Promise<BibleVerse>;
   
@@ -186,26 +187,39 @@ export class DatabaseStorage implements IStorage {
     return allVerses[dayOfYear % allVerses.length];
   }
 
-  async getBibleVerses(book: string, chapter: number): Promise<BibleVerse[]> {
+  async getBibleVerses(book: string, chapter: number, translation: string = "KJV"): Promise<BibleVerse[]> {
     return db.select().from(bibleVerses)
-      .where(and(eq(bibleVerses.book, book), eq(bibleVerses.chapter, chapter)))
+      .where(and(
+        eq(bibleVerses.book, book), 
+        eq(bibleVerses.chapter, chapter),
+        eq(bibleVerses.translation, translation)
+      ))
       .orderBy(asc(bibleVerses.verse));
   }
 
-  async getChapterCount(book: string): Promise<number> {
+  async getChapterCount(book: string, translation: string = "KJV"): Promise<number> {
     const result = await db.select({ chapter: bibleVerses.chapter })
       .from(bibleVerses)
-      .where(eq(bibleVerses.book, book))
+      .where(and(eq(bibleVerses.book, book), eq(bibleVerses.translation, translation)))
       .groupBy(bibleVerses.chapter)
       .orderBy(desc(bibleVerses.chapter))
       .limit(1);
     return result[0]?.chapter || 1;
   }
 
-  async searchBibleVerses(query: string): Promise<BibleVerse[]> {
+  async searchBibleVerses(query: string, translation: string = "KJV"): Promise<BibleVerse[]> {
     return db.select().from(bibleVerses)
-      .where(ilike(bibleVerses.text, `%${query}%`))
+      .where(and(
+        ilike(bibleVerses.text, `%${query}%`),
+        eq(bibleVerses.translation, translation)
+      ))
       .limit(50);
+  }
+
+  async getAvailableTranslations(): Promise<string[]> {
+    const result = await db.selectDistinct({ translation: bibleVerses.translation })
+      .from(bibleVerses);
+    return result.map(r => r.translation);
   }
 
   async getBibleVerse(id: number): Promise<BibleVerse | undefined> {
