@@ -104,9 +104,9 @@ export default function Home() {
 
   return (
     <Layout>
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-6 md:py-10">
-        <div className="mb-8">
-          <h1 className="font-serif text-2xl md:text-3xl font-semibold mb-1">
+      <div className="max-w-lg mx-auto px-4 sm:px-6 py-6 sm:py-10">
+        <div className="text-center mb-8">
+          <h1 className="font-serif text-2xl sm:text-3xl font-semibold mb-2">
             Welcome{user?.firstName ? `, ${user.firstName}` : ""}
           </h1>
           <p className="text-muted-foreground">
@@ -117,21 +117,16 @@ export default function Home() {
         <div className="space-y-6">
           <VerseOfDay />
 
-          <div className="grid gap-4 sm:grid-cols-2">
+          <div className="grid gap-3 grid-cols-2">
             {quickNavItems.map((item) => (
               <Link key={item.path} href={item.path}>
-                <Card className="h-full cursor-pointer transition-all hover:shadow-md hover:border-primary/30">
-                  <CardContent className="p-6">
-                    <div className="flex items-start justify-between gap-4">
-                      <div className="flex-1">
-                        <div className={`w-12 h-12 rounded-xl ${item.color} flex items-center justify-center mb-4`}>
-                          <item.icon className="h-6 w-6" />
-                        </div>
-                        <h3 className="font-semibold text-lg mb-1">{item.label}</h3>
-                        <p className="text-sm text-muted-foreground">{item.description}</p>
-                      </div>
-                      <ChevronRight className="h-5 w-5 text-muted-foreground mt-1" />
+                <Card className="h-full cursor-pointer transition-all hover:shadow-md active:scale-[0.98] hover:border-primary/30">
+                  <CardContent className="p-4 sm:p-6 text-center">
+                    <div className={`w-14 h-14 sm:w-16 sm:h-16 rounded-2xl ${item.color} flex items-center justify-center mx-auto mb-3`}>
+                      <item.icon className="h-7 w-7 sm:h-8 sm:w-8" />
                     </div>
+                    <h3 className="font-semibold text-base sm:text-lg">{item.label}</h3>
+                    <p className="text-xs sm:text-sm text-muted-foreground mt-1 hidden sm:block">{item.description}</p>
                   </CardContent>
                 </Card>
               </Link>

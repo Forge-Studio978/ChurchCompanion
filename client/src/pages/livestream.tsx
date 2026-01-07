@@ -315,11 +315,13 @@ export default function LivestreamCompanion() {
   if (!isAuthenticated) {
     return (
       <Layout>
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12 text-center">
-          <Radio className="h-16 w-16 mx-auto mb-4 text-muted-foreground" />
+        <div className="max-w-sm mx-auto px-4 py-16 text-center">
+          <div className="w-20 h-20 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-6">
+            <Radio className="h-10 w-10 text-primary" />
+          </div>
           <h1 className="font-serif text-2xl font-semibold mb-2">Livestream Companion</h1>
-          <p className="text-muted-foreground mb-6">Sign in to watch livestreams and take notes</p>
-          <Button asChild data-testid="button-sign-in">
+          <p className="text-muted-foreground mb-8">Sign in to watch livestreams and take notes</p>
+          <Button size="lg" asChild data-testid="button-sign-in">
             <a href="/api/login">Sign In</a>
           </Button>
         </div>
@@ -333,21 +335,21 @@ export default function LivestreamCompanion() {
 
     return (
       <Layout>
-        <div className="h-[calc(100vh-120px)] flex flex-col lg:flex-row gap-4 p-4">
+        <div className="h-[calc(100vh-120px)] flex flex-col lg:flex-row gap-3 p-3 sm:p-4">
           <div className="flex-1 flex flex-col min-h-0">
-            <div className="flex items-center gap-4 mb-4 flex-wrap">
-              <Button variant="ghost" onClick={() => setSelectedLivestream(null)} data-testid="button-back">
+            <div className="flex items-center gap-2 mb-3 flex-wrap">
+              <Button variant="ghost" size="sm" onClick={() => setSelectedLivestream(null)} data-testid="button-back">
                 <ChevronLeft className="h-4 w-4 mr-1" />
                 Back
               </Button>
-              <h1 className="font-serif text-xl font-semibold flex-1 truncate">{selectedLivestream.title}</h1>
-              <Badge variant="outline" className="gap-1">
+              <h1 className="font-serif text-lg sm:text-xl font-semibold flex-1 truncate">{selectedLivestream.title}</h1>
+              <Badge variant="outline" className="gap-1 text-xs">
                 <Clock className="h-3 w-3" />
                 {formatTimestamp(currentTime)}
               </Badge>
             </div>
 
-            <div className="flex-1 bg-black rounded-lg overflow-hidden min-h-[200px] lg:min-h-0">
+            <div className="flex-1 bg-black rounded-lg overflow-hidden min-h-[180px] sm:min-h-[200px] lg:min-h-0">
               {isDirectVideo ? (
                 <video
                   ref={videoRef}
@@ -645,17 +647,19 @@ export default function LivestreamCompanion() {
 
   return (
     <Layout>
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        <div className="flex items-center justify-between gap-4 mb-6 flex-wrap">
-          <div>
-            <h1 className="font-serif text-2xl md:text-3xl font-semibold">Livestream Companion</h1>
-            <p className="text-muted-foreground mt-1">Watch services and take notes</p>
-          </div>
-          <Button onClick={() => setCreateDialogOpen(true)} data-testid="button-add-livestream">
-            <Plus className="h-4 w-4 mr-2" />
-            Add Livestream
-          </Button>
+      <div className="max-w-lg mx-auto px-4 sm:px-6 py-6">
+        <div className="text-center mb-6">
+          <h1 className="font-serif text-2xl sm:text-3xl font-semibold mb-2">Livestream Companion</h1>
+          <p className="text-muted-foreground">Watch services and take notes</p>
         </div>
+        <Button 
+          onClick={() => setCreateDialogOpen(true)} 
+          className="w-full mb-6"
+          data-testid="button-add-livestream"
+        >
+          <Plus className="h-4 w-4 mr-2" />
+          Add Livestream
+        </Button>
 
         {isLoading ? (
           <div className="space-y-4">

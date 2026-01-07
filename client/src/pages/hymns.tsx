@@ -114,60 +114,60 @@ export default function Hymns() {
 
   return (
     <Layout>
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        <div className="mb-6">
-          <div className="flex items-center justify-between gap-4 mb-4 flex-wrap">
-            <h1 className="font-serif text-2xl md:text-3xl font-semibold">Hymnal Library</h1>
-            {isAuthenticated && (
-              <Button 
-                variant="outline" 
-                onClick={() => setCreatePlaylistOpen(true)}
-                data-testid="button-create-playlist"
-              >
-                <Plus className="h-4 w-4 mr-2" />
-                New Playlist
-              </Button>
-            )}
+      <div className="max-w-lg mx-auto px-4 sm:px-6 py-6">
+        <div className="text-center mb-6">
+          <h1 className="font-serif text-2xl sm:text-3xl font-semibold mb-2">Hymnal Library</h1>
+          <p className="text-muted-foreground">Browse and search hymns</p>
+        </div>
+        {isAuthenticated && (
+          <Button 
+            variant="outline"
+            className="w-full mb-4"
+            onClick={() => setCreatePlaylistOpen(true)}
+            data-testid="button-create-playlist"
+          >
+            <Plus className="h-4 w-4 mr-2" />
+            New Playlist
+          </Button>
+        )}
+        
+        <div className="flex flex-col gap-4 mb-6">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Search hymns by title or lyrics..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-10"
+              data-testid="input-search-hymns"
+            />
           </div>
-          
-          <div className="flex flex-col gap-4">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Search hymns by title or lyrics..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10"
-                data-testid="input-search-hymns"
-              />
-            </div>
 
-            {tags.length > 0 && (
-              <ScrollArea className="w-full">
-                <div className="flex gap-2 pb-2">
+          {tags.length > 0 && (
+            <ScrollArea className="w-full">
+              <div className="flex gap-2 pb-2">
+                <Badge
+                  variant={selectedTag === null ? "default" : "outline"}
+                  className="cursor-pointer shrink-0"
+                  onClick={() => setSelectedTag(null)}
+                  data-testid="tag-all"
+                >
+                  All
+                </Badge>
+                {tags.map((tag) => (
                   <Badge
-                    variant={selectedTag === null ? "default" : "outline"}
+                    key={tag}
+                    variant={selectedTag === tag ? "default" : "outline"}
                     className="cursor-pointer shrink-0"
-                    onClick={() => setSelectedTag(null)}
-                    data-testid="tag-all"
+                    onClick={() => setSelectedTag(tag)}
+                    data-testid={`tag-${tag}`}
                   >
-                    All
+                    {tag}
                   </Badge>
-                  {tags.map((tag) => (
-                    <Badge
-                      key={tag}
-                      variant={selectedTag === tag ? "default" : "outline"}
-                      className="cursor-pointer shrink-0"
-                      onClick={() => setSelectedTag(tag)}
-                      data-testid={`tag-${tag}`}
-                    >
-                      {tag}
-                    </Badge>
-                  ))}
-                </div>
-              </ScrollArea>
-            )}
-          </div>
+                ))}
+              </div>
+            </ScrollArea>
+          )}
         </div>
 
         {isLoading ? (

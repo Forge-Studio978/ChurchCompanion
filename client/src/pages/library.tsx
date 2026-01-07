@@ -229,11 +229,13 @@ export default function LibraryPage() {
   if (!isAuthenticated) {
     return (
       <Layout>
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12 text-center">
-          <FolderOpen className="h-16 w-16 mx-auto mb-4 text-muted-foreground" />
+        <div className="max-w-sm mx-auto px-4 py-16 text-center">
+          <div className="w-20 h-20 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-6">
+            <FolderOpen className="h-10 w-10 text-primary" />
+          </div>
           <h1 className="font-serif text-2xl font-semibold mb-2">Your Library</h1>
-          <p className="text-muted-foreground mb-6">Sign in to save verses, hymns, books, and notes</p>
-          <Button asChild data-testid="button-sign-in">
+          <p className="text-muted-foreground mb-8">Sign in to save verses, hymns, books, and notes</p>
+          <Button size="lg" asChild data-testid="button-sign-in">
             <a href="/api/login">Sign In</a>
           </Button>
         </div>
@@ -251,11 +253,14 @@ export default function LibraryPage() {
 
   return (
     <Layout>
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        <h1 className="font-serif text-2xl md:text-3xl font-semibold mb-6">My Library</h1>
+      <div className="max-w-lg mx-auto px-4 sm:px-6 py-6">
+        <div className="text-center mb-6">
+          <h1 className="font-serif text-2xl sm:text-3xl font-semibold mb-2">My Library</h1>
+          <p className="text-muted-foreground">Your saved content and notes</p>
+        </div>
 
         <Tabs defaultValue="books" className="w-full">
-          <TabsList className="w-full justify-start mb-6 flex-wrap h-auto gap-1">
+          <TabsList className="w-full grid grid-cols-3 sm:grid-cols-6 mb-6 h-auto gap-1">
             <TabsTrigger value="books" className="gap-2" data-testid="tab-books">
               <Book className="h-4 w-4" />
               <span className="hidden sm:inline">Devotionals</span>

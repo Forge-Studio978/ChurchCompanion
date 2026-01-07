@@ -137,185 +137,188 @@ export default function Bible() {
 
   return (
     <Layout>
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        <div className="flex flex-col gap-4 mb-6">
-          <div className="flex items-center gap-3 flex-wrap">
-            <Select value={book} onValueChange={(v) => { setBook(v); setChapter(1); }}>
-              <SelectTrigger className="w-[180px]" data-testid="select-book">
-                <SelectValue placeholder="Select book" />
-              </SelectTrigger>
-              <SelectContent>
-                <ScrollArea className="h-[300px]">
-                  {BIBLE_BOOKS.map((b) => (
-                    <SelectItem key={b} value={b}>{b}</SelectItem>
-                  ))}
-                </ScrollArea>
-              </SelectContent>
-            </Select>
+      <div className="max-w-3xl mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-6">
+        <div className="sticky top-0 z-40 bg-background/95 backdrop-blur-sm -mx-3 px-3 sm:-mx-6 sm:px-6 pb-4 pt-2 border-b mb-4">
+          <div className="flex flex-col gap-3">
+            <div className="flex items-center gap-2">
+              <Select value={book} onValueChange={(v) => { setBook(v); setChapter(1); }}>
+                <SelectTrigger className="flex-1 sm:w-[180px] sm:flex-none" data-testid="select-book">
+                  <SelectValue placeholder="Select book" />
+                </SelectTrigger>
+                <SelectContent>
+                  <ScrollArea className="h-[300px]">
+                    {BIBLE_BOOKS.map((b) => (
+                      <SelectItem key={b} value={b}>{b}</SelectItem>
+                    ))}
+                  </ScrollArea>
+                </SelectContent>
+              </Select>
 
-            <Select value={chapter.toString()} onValueChange={(v) => setChapter(parseInt(v))}>
-              <SelectTrigger className="w-[120px]" data-testid="select-chapter">
-                <SelectValue placeholder="Chapter" />
-              </SelectTrigger>
-              <SelectContent>
-                <ScrollArea className="h-[200px]">
-                  {Array.from({ length: chapterCount }, (_, i) => i + 1).map((c) => (
-                    <SelectItem key={c} value={c.toString()}>Chapter {c}</SelectItem>
-                  ))}
-                </ScrollArea>
-              </SelectContent>
-            </Select>
+              <Select value={chapter.toString()} onValueChange={(v) => setChapter(parseInt(v))}>
+                <SelectTrigger className="w-[100px] sm:w-[120px]" data-testid="select-chapter">
+                  <SelectValue placeholder="Ch." />
+                </SelectTrigger>
+                <SelectContent>
+                  <ScrollArea className="h-[200px]">
+                    {Array.from({ length: chapterCount }, (_, i) => i + 1).map((c) => (
+                      <SelectItem key={c} value={c.toString()}>{c}</SelectItem>
+                    ))}
+                  </ScrollArea>
+                </SelectContent>
+              </Select>
 
-            <div className="flex items-center gap-1 ml-auto">
-              <Button
-                variant="outline"
-                size="icon"
-                onClick={() => goToChapter(chapter - 1)}
-                disabled={chapter <= 1}
-                data-testid="button-prev-chapter"
-              >
-                <ChevronLeft className="h-4 w-4" />
-              </Button>
-              <Button
-                variant="outline"
-                size="icon"
-                onClick={() => goToChapter(chapter + 1)}
-                disabled={chapter >= chapterCount}
-                data-testid="button-next-chapter"
-              >
-                <ChevronRight className="h-4 w-4" />
-              </Button>
-              <Button
-                variant="outline"
-                size="icon"
-                onClick={() => setShowSearch(!showSearch)}
-                data-testid="button-search"
-              >
-                {showSearch ? <X className="h-4 w-4" /> : <Search className="h-4 w-4" />}
-              </Button>
-            </div>
-          </div>
-
-          {showSearch && (
-            <div className="relative">
-              <Input
-                placeholder="Search the Bible..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pr-10"
-                data-testid="input-search"
-              />
-              {searchQuery.length > 2 && searchResults.length > 0 && (
-                <Card className="absolute top-full left-0 right-0 z-50 mt-1 max-h-[300px] overflow-auto">
-                  <CardContent className="p-2">
-                    {isSearching ? (
-                      <div className="p-4 text-center text-muted-foreground">Searching...</div>
-                    ) : (
-                      searchResults.slice(0, 20).map((verse) => (
-                        <button
-                          key={verse.id}
-                          className="w-full text-left p-3 rounded-md hover:bg-accent transition-colors"
-                          onClick={() => handleSearchResult(verse)}
-                          data-testid={`search-result-${verse.id}`}
-                        >
-                          <div className="font-medium text-sm">
-                            {verse.book} {verse.chapter}:{verse.verse}
-                          </div>
-                          <div className="text-sm text-muted-foreground line-clamp-2">
-                            {verse.text}
-                          </div>
-                        </button>
-                      ))
-                    )}
-                  </CardContent>
-                </Card>
-              )}
-            </div>
-          )}
-        </div>
-
-        <Card>
-          <CardContent className="p-6 md:p-8">
-            <h2 className="font-serif text-2xl md:text-3xl font-semibold mb-6 text-center">
-              {book} {chapter}
-            </h2>
-
-            {isLoading ? (
-              <div className="space-y-4">
-                {Array.from({ length: 10 }).map((_, i) => (
-                  <Skeleton key={i} className="h-6 w-full" />
-                ))}
+              <div className="flex items-center gap-1">
+                <Button
+                  variant="outline"
+                  size="icon"
+                  onClick={() => goToChapter(chapter - 1)}
+                  disabled={chapter <= 1}
+                  data-testid="button-prev-chapter"
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                </Button>
+                <Button
+                  variant="outline"
+                  size="icon"
+                  onClick={() => goToChapter(chapter + 1)}
+                  disabled={chapter >= chapterCount}
+                  data-testid="button-next-chapter"
+                >
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+                <Button
+                  variant="outline"
+                  size="icon"
+                  onClick={() => setShowSearch(!showSearch)}
+                  data-testid="button-search"
+                >
+                  {showSearch ? <X className="h-4 w-4" /> : <Search className="h-4 w-4" />}
+                </Button>
               </div>
-            ) : verses.length === 0 ? (
-              <p className="text-center text-muted-foreground py-12">
-                No verses found. The Bible data may still be loading.
-              </p>
-            ) : (
-              <div className="font-serif text-lg leading-relaxed space-y-1">
-                {verses.map((verse) => (
-                  <Popover key={verse.id}>
-                    <PopoverTrigger asChild>
-                      <span
-                        className={cn(
-                          "inline cursor-pointer rounded px-0.5 transition-colors hover:bg-accent",
-                          getVerseHighlight(verse.id)
-                        )}
-                        data-testid={`verse-${verse.id}`}
-                      >
-                        <sup className="text-xs text-muted-foreground mr-1">{verse.verse}</sup>
-                        {verse.text}{" "}
-                      </span>
-                    </PopoverTrigger>
-                    {isAuthenticated && (
-                      <PopoverContent className="w-auto p-2" align="start">
-                        <div className="flex items-center gap-2">
-                          <Popover>
-                            <PopoverTrigger asChild>
-                              <Button variant="ghost" size="icon" data-testid={`highlight-${verse.id}`}>
-                                <Highlighter className="h-4 w-4" />
-                              </Button>
-                            </PopoverTrigger>
-                            <PopoverContent className="w-auto p-2" side="top">
-                              <div className="flex gap-1">
-                                {HIGHLIGHT_COLORS.map((color) => (
-                                  <button
-                                    key={color.name}
-                                    className={cn(
-                                      "w-6 h-6 rounded-full border-2 border-transparent hover:border-foreground/50 transition-colors",
-                                      color.class
-                                    )}
-                                    onClick={() => highlightMutation.mutate({ verseId: verse.id, color: color.name })}
-                                    data-testid={`color-${color.name}`}
-                                  />
-                                ))}
-                              </div>
-                            </PopoverContent>
-                          </Popover>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => saveMutation.mutate(verse.id)}
-                            data-testid={`save-${verse.id}`}
+            </div>
+
+            {showSearch && (
+              <div className="relative">
+                <Input
+                  placeholder="Search the Bible..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pr-10"
+                  autoFocus
+                  data-testid="input-search"
+                />
+                {searchQuery.length > 2 && searchResults.length > 0 && (
+                  <Card className="absolute top-full left-0 right-0 z-50 mt-1 max-h-[60vh] overflow-auto">
+                    <CardContent className="p-2">
+                      {isSearching ? (
+                        <div className="p-4 text-center text-muted-foreground">Searching...</div>
+                      ) : (
+                        searchResults.slice(0, 20).map((verse) => (
+                          <button
+                            key={verse.id}
+                            className="w-full text-left p-4 rounded-md hover:bg-accent active:bg-accent/80 transition-colors"
+                            onClick={() => handleSearchResult(verse)}
+                            data-testid={`search-result-${verse.id}`}
                           >
-                            <Bookmark className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => { setSelectedVerse(verse); setNoteDialogOpen(true); }}
-                            data-testid={`note-${verse.id}`}
-                          >
-                            <PenLine className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </PopoverContent>
-                    )}
-                  </Popover>
-                ))}
+                            <div className="font-medium text-sm">
+                              {verse.book} {verse.chapter}:{verse.verse}
+                            </div>
+                            <div className="text-sm text-muted-foreground line-clamp-2">
+                              {verse.text}
+                            </div>
+                          </button>
+                        ))
+                      )}
+                    </CardContent>
+                  </Card>
+                )}
               </div>
             )}
-          </CardContent>
-        </Card>
+          </div>
+        </div>
+
+        <div className="text-center mb-6">
+          <h2 className="font-serif text-2xl sm:text-3xl font-semibold">
+            {book} {chapter}
+          </h2>
+        </div>
+
+        {isLoading ? (
+          <div className="space-y-4 px-2">
+            {Array.from({ length: 10 }).map((_, i) => (
+              <Skeleton key={i} className="h-6 w-full" />
+            ))}
+          </div>
+        ) : verses.length === 0 ? (
+          <p className="text-center text-muted-foreground py-12">
+            No verses found. The Bible data may still be loading.
+          </p>
+        ) : (
+          <div className="font-serif text-lg sm:text-xl leading-relaxed sm:leading-loose px-1 sm:px-4">
+            {verses.map((verse) => (
+              <Popover key={verse.id}>
+                <PopoverTrigger asChild>
+                  <span
+                    className={cn(
+                      "inline cursor-pointer rounded py-1 px-0.5 transition-colors hover:bg-accent active:bg-accent/80",
+                      getVerseHighlight(verse.id)
+                    )}
+                    data-testid={`verse-${verse.id}`}
+                  >
+                    <sup className="text-xs text-primary font-sans font-medium mr-1">{verse.verse}</sup>
+                    {verse.text}{" "}
+                  </span>
+                </PopoverTrigger>
+                {isAuthenticated && (
+                  <PopoverContent className="w-auto p-3" align="center" side="top">
+                    <div className="flex items-center gap-3">
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <Button variant="ghost" size="icon" className="h-11 w-11" data-testid={`highlight-${verse.id}`}>
+                            <Highlighter className="h-5 w-5" />
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-3" side="top">
+                          <div className="flex gap-2">
+                            {HIGHLIGHT_COLORS.map((color) => (
+                              <button
+                                key={color.name}
+                                className={cn(
+                                  "w-9 h-9 rounded-full border-2 border-transparent hover:border-foreground/50 active:scale-95 transition-all",
+                                  color.class
+                                )}
+                                onClick={() => highlightMutation.mutate({ verseId: verse.id, color: color.name })}
+                                data-testid={`color-${color.name}`}
+                              />
+                            ))}
+                          </div>
+                        </PopoverContent>
+                      </Popover>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-11 w-11"
+                        onClick={() => saveMutation.mutate(verse.id)}
+                        data-testid={`save-${verse.id}`}
+                      >
+                        <Bookmark className="h-5 w-5" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-11 w-11"
+                        onClick={() => { setSelectedVerse(verse); setNoteDialogOpen(true); }}
+                        data-testid={`note-${verse.id}`}
+                      >
+                        <PenLine className="h-5 w-5" />
+                      </Button>
+                    </div>
+                  </PopoverContent>
+                )}
+              </Popover>
+            ))}
+          </div>
+        )}
 
         <Dialog open={noteDialogOpen} onOpenChange={setNoteDialogOpen}>
           <DialogContent>
