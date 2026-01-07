@@ -6,6 +6,8 @@ import { seedBibleData } from "./seed/bible";
 import { seedHymnsData } from "./seed/hymns";
 import { seedDailyDevotionals } from "./seed/daily-devotionals";
 import { seedFrenchHymns } from "./seed/french-hymns";
+import { seedAdditionalBibles } from "./seed/additional-bibles";
+import { seedHymnsFromFiles } from "./seed/hymns-from-files";
 import { 
   createTranscript, 
   getTranscriptByLivestream, 
@@ -25,6 +27,8 @@ export async function registerRoutes(
   await seedHymnsData();
   await seedFrenchHymns();
   await seedDailyDevotionals();
+  await seedAdditionalBibles();
+  await seedHymnsFromFiles();
 
   app.get("/api/verse-of-day", async (req, res) => {
     try {
