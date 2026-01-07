@@ -5,6 +5,7 @@ import { setupAuth, isAuthenticated, registerAuthRoutes } from "./replit_integra
 import { seedBibleData } from "./seed/bible";
 import { seedHymnsData } from "./seed/hymns";
 import { seedDailyDevotionals } from "./seed/daily-devotionals";
+import { seedFrenchHymns } from "./seed/french-hymns";
 import { 
   createTranscript, 
   getTranscriptByLivestream, 
@@ -22,6 +23,7 @@ export async function registerRoutes(
 
   await seedBibleData();
   await seedHymnsData();
+  await seedFrenchHymns();
   await seedDailyDevotionals();
 
   app.get("/api/verse-of-day", async (req, res) => {
@@ -140,7 +142,8 @@ export async function registerRoutes(
 
   app.get("/api/hymns", async (req, res) => {
     try {
-      const hymns = await storage.getHymns();
+      const language = (req.query.language as string) || "en";
+      const hymns = await storage.getHymns(language);
       res.json(hymns);
     } catch (error) {
       console.error("Error getting hymns:", error);

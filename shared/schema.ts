@@ -33,6 +33,7 @@ export const hymns = pgTable("hymns", {
   tags: text("tags").array(),
   tune: varchar("tune", { length: 100 }),
   meter: varchar("meter", { length: 50 }),
+  language: varchar("language", { length: 10 }).notNull().default("en"),
 });
 
 export const savedHymns = pgTable("saved_hymns", {

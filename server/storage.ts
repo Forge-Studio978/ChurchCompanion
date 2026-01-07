@@ -29,7 +29,7 @@ export interface IStorage {
   createHighlight(highlight: InsertHighlight): Promise<Highlight>;
   deleteHighlight(id: number, userId: string): Promise<void>;
   
-  getHymns(): Promise<Hymn[]>;
+  getHymns(language?: string): Promise<Hymn[]>;
   getHymn(id: number): Promise<Hymn | undefined>;
   getHymnTags(): Promise<string[]>;
   insertHymn(hymn: InsertHymn): Promise<Hymn>;
@@ -248,8 +248,8 @@ export class DatabaseStorage implements IStorage {
     await db.delete(highlights).where(and(eq(highlights.id, id), eq(highlights.userId, userId)));
   }
 
-  async getHymns(): Promise<Hymn[]> {
-    return db.select().from(hymns).orderBy(asc(hymns.title));
+  async getHymns(language: string = "en"): Promise<Hymn[]> {
+    return db.select().from(hymns).where(eq(hymns.language, language)).orderBy(asc(hymns.title));
   }
 
   async getHymn(id: number): Promise<Hymn | undefined> {
