@@ -388,7 +388,12 @@ export async function registerRoutes(
 
   app.get("/api/livestreams/:id/detected-verses", isAuthenticated, async (req: any, res) => {
     try {
+      const userId = req.user.claims.sub;
       const livestreamId = parseInt(req.params.id);
+      const livestream = await storage.getLivestream(livestreamId, userId);
+      if (!livestream) {
+        return res.status(404).json({ message: "Livestream not found" });
+      }
       const verses = await storage.getDetectedVerses(livestreamId);
       res.json(verses);
     } catch (error) {
@@ -399,7 +404,12 @@ export async function registerRoutes(
 
   app.post("/api/livestreams/:id/detected-verses", isAuthenticated, async (req: any, res) => {
     try {
+      const userId = req.user.claims.sub;
       const livestreamId = parseInt(req.params.id);
+      const livestream = await storage.getLivestream(livestreamId, userId);
+      if (!livestream) {
+        return res.status(404).json({ message: "Livestream not found" });
+      }
       const { bibleReference, timestampSeconds } = req.body;
       const verse = await storage.addDetectedVerse({
         livestreamId,
@@ -415,7 +425,12 @@ export async function registerRoutes(
 
   app.get("/api/livestreams/:id/detected-hymns", isAuthenticated, async (req: any, res) => {
     try {
+      const userId = req.user.claims.sub;
       const livestreamId = parseInt(req.params.id);
+      const livestream = await storage.getLivestream(livestreamId, userId);
+      if (!livestream) {
+        return res.status(404).json({ message: "Livestream not found" });
+      }
       const hymns = await storage.getDetectedHymns(livestreamId);
       res.json(hymns);
     } catch (error) {
@@ -426,7 +441,12 @@ export async function registerRoutes(
 
   app.post("/api/livestreams/:id/detected-hymns", isAuthenticated, async (req: any, res) => {
     try {
+      const userId = req.user.claims.sub;
       const livestreamId = parseInt(req.params.id);
+      const livestream = await storage.getLivestream(livestreamId, userId);
+      if (!livestream) {
+        return res.status(404).json({ message: "Livestream not found" });
+      }
       const { hymnId, title, timestampSeconds } = req.body;
       const hymn = await storage.addDetectedHymn({
         livestreamId,

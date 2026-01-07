@@ -20,10 +20,10 @@ import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useAuth } from "@/hooks/use-auth";
 import { 
   Book, Music, FileText, Highlighter, Trash2, Bookmark, FolderOpen, 
-  Search, Plus, Download, Radio, ChevronRight, BookOpen
+  Search, Plus, Download, Radio, ChevronRight, BookOpen, Clock
 } from "lucide-react";
 import { Link, useLocation } from "wouter";
-import type { BibleVerse, Hymn, Note, Highlight, DevotionalBook } from "@shared/schema";
+import type { BibleVerse, Hymn, Note, Highlight, DevotionalBook, Livestream, LivestreamNote } from "@shared/schema";
 
 interface SavedVerseWithVerse {
   id: number;
@@ -47,12 +47,26 @@ interface NoteWithContext extends Note {
   verse?: BibleVerse;
 }
 
+interface LivestreamNoteWithContext extends LivestreamNote {
+  livestream: Livestream;
+}
+
 interface GutenbergSearchResult {
   gutenbergId: string;
   title: string;
   author: string;
   subjects: string[];
   downloadUrl: string | null;
+}
+
+function formatLivestreamTime(seconds: number): string {
+  const h = Math.floor(seconds / 3600);
+  const m = Math.floor((seconds % 3600) / 60);
+  const s = seconds % 60;
+  if (h > 0) {
+    return `${h}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+  }
+  return `${m}:${s.toString().padStart(2, '0')}`;
 }
 
 export default function LibraryPage() {
@@ -86,6 +100,11 @@ export default function LibraryPage() {
 
   const { data: books = [], isLoading: booksLoading } = useQuery<DevotionalBook[]>({
     queryKey: ["/api/devotional-books"],
+    enabled: isAuthenticated,
+  });
+
+  const { data: savedLivestreamNotes = [], isLoading: livestreamNotesLoading } = useQuery<LivestreamNoteWithContext[]>({
+    queryKey: ["/api/livestream-notes"],
     enabled: isAuthenticated,
   });
 
@@ -133,6 +152,14 @@ export default function LibraryPage() {
     },
   });
 
+  const deleteLivestreamNoteMutation = useMutation({
+    mutationFn: async (id: number) => apiRequest("DELETE", `/api/livestream-notes/${id}`),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/livestream-notes"] });
+      toast({ title: "Note deleted" });
+    },
+  });
+
   const deleteBookMutation = useMutation({
     mutationFn: async (id: number) => apiRequest("DELETE", `/api/devotional-books/${id}`),
     onSuccess: () => {
@@ -162,11 +189,19 @@ export default function LibraryPage() {
   });
 
   const bibleNotes = notes.filter(n => n.verseId && !n.sermonId);
-  const livestreamNotes = notes.filter(n => n.sermonId);
+  const oldLivestreamNotes = notes.filter(n => n.sermonId);
 
   const filteredNotes = searchQuery
     ? notes.filter(n => n.content.toLowerCase().includes(searchQuery.toLowerCase()))
     : notes;
+
+  const filteredLivestreamNotes = searchQuery
+    ? savedLivestreamNotes.filter(n => 
+        n.content.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        n.livestream?.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        n.bibleReference?.toLowerCase().includes(searchQuery.toLowerCase())
+      )
+    : savedLivestreamNotes;
 
   const filteredHighlights = searchQuery
     ? highlights.filter(h => 
@@ -444,13 +479,13 @@ export default function LibraryPage() {
                 />
               </div>
             </div>
-            {notesLoading ? (
+            {notesLoading && livestreamNotesLoading ? (
               <div className="space-y-4">
                 {Array.from({ length: 5 }).map((_, i) => (
                   <Skeleton key={i} className="h-32 w-full" />
                 ))}
               </div>
-            ) : filteredNotes.length === 0 ? (
+            ) : filteredNotes.length === 0 && filteredLivestreamNotes.length === 0 ? (
               <EmptyState
                 icon={FileText}
                 title="No notes"
@@ -458,53 +493,107 @@ export default function LibraryPage() {
               />
             ) : (
               <div className="space-y-3">
-                {filteredNotes.map((note) => (
-                  <Card key={note.id} data-testid={`note-${note.id}`}>
-                    <CardContent className="p-4">
-                      <div className="flex items-start justify-between gap-4">
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2 mb-2">
-                            {note.verseId && !note.sermonId && (
-                              <Badge variant="outline" className="gap-1">
-                                <Book className="h-3 w-3" />
-                                Bible
-                              </Badge>
-                            )}
-                            {note.sermonId && (
-                              <Badge variant="outline" className="gap-1">
-                                <Radio className="h-3 w-3" />
-                                Livestream
-                              </Badge>
-                            )}
-                            {note.timestamp && (
-                              <Badge variant="secondary">{note.timestamp}</Badge>
-                            )}
-                          </div>
-                          {note.verse && (
-                            <Link 
-                              href={`/bible?book=${encodeURIComponent(note.verse.book)}&chapter=${note.verse.chapter}`}
-                              className="text-sm text-primary hover:underline"
+                {filteredLivestreamNotes.length > 0 && (
+                  <>
+                    <h3 className="font-medium text-sm text-muted-foreground flex items-center gap-2 mt-4">
+                      <Radio className="h-4 w-4" />
+                      Livestream Notes
+                    </h3>
+                    {filteredLivestreamNotes.map((note) => (
+                      <Card key={`ls-${note.id}`} data-testid={`livestream-note-${note.id}`}>
+                        <CardContent className="p-4">
+                          <div className="flex items-start justify-between gap-4">
+                            <div className="flex-1">
+                              <div className="flex items-center gap-2 mb-2 flex-wrap">
+                                <Badge variant="outline" className="gap-1">
+                                  <Radio className="h-3 w-3" />
+                                  {note.livestream?.title || "Livestream"}
+                                </Badge>
+                                <Badge variant="secondary" className="gap-1">
+                                  <Clock className="h-3 w-3" />
+                                  {formatLivestreamTime(note.timestampSeconds)}
+                                </Badge>
+                              </div>
+                              {note.bibleReference && (
+                                <Badge variant="outline" className="gap-1 mb-2">
+                                  <Book className="h-3 w-3" />
+                                  {note.bibleReference}
+                                </Badge>
+                              )}
+                              <p className="leading-relaxed whitespace-pre-wrap">{note.content}</p>
+                              <p className="text-xs text-muted-foreground mt-2">
+                                {new Date(note.createdAt!).toLocaleDateString()}
+                              </p>
+                            </div>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => deleteLivestreamNoteMutation.mutate(note.id)}
+                              data-testid={`delete-ls-note-${note.id}`}
                             >
-                              {note.verse.book} {note.verse.chapter}:{note.verse.verse}
-                            </Link>
-                          )}
-                          <p className="leading-relaxed whitespace-pre-wrap mt-1">{note.content}</p>
-                          <p className="text-xs text-muted-foreground mt-2">
-                            {new Date(note.createdAt!).toLocaleDateString()}
-                          </p>
-                        </div>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => deleteNoteMutation.mutate(note.id)}
-                          data-testid={`delete-note-${note.id}`}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </>
+                )}
+                {filteredNotes.length > 0 && (
+                  <>
+                    <h3 className="font-medium text-sm text-muted-foreground flex items-center gap-2 mt-4">
+                      <Book className="h-4 w-4" />
+                      Bible Notes
+                    </h3>
+                    {filteredNotes.map((note) => (
+                      <Card key={note.id} data-testid={`note-${note.id}`}>
+                        <CardContent className="p-4">
+                          <div className="flex items-start justify-between gap-4">
+                            <div className="flex-1">
+                              <div className="flex items-center gap-2 mb-2">
+                                {note.verseId && !note.sermonId && (
+                                  <Badge variant="outline" className="gap-1">
+                                    <Book className="h-3 w-3" />
+                                    Bible
+                                  </Badge>
+                                )}
+                                {note.sermonId && (
+                                  <Badge variant="outline" className="gap-1">
+                                    <Radio className="h-3 w-3" />
+                                    Sermon
+                                  </Badge>
+                                )}
+                                {note.timestamp && (
+                                  <Badge variant="secondary">{note.timestamp}</Badge>
+                                )}
+                              </div>
+                              {note.verse && (
+                                <Link 
+                                  href={`/bible?book=${encodeURIComponent(note.verse.book)}&chapter=${note.verse.chapter}`}
+                                  className="text-sm text-primary hover:underline"
+                                >
+                                  {note.verse.book} {note.verse.chapter}:{note.verse.verse}
+                                </Link>
+                              )}
+                              <p className="leading-relaxed whitespace-pre-wrap mt-1">{note.content}</p>
+                              <p className="text-xs text-muted-foreground mt-2">
+                                {new Date(note.createdAt!).toLocaleDateString()}
+                              </p>
+                            </div>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => deleteNoteMutation.mutate(note.id)}
+                              data-testid={`delete-note-${note.id}`}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </>
+                )}
               </div>
             )}
           </TabsContent>
