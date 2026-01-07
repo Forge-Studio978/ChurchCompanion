@@ -1,7 +1,7 @@
 import {
   bibleVerses, highlights, hymns, savedHymns, playlists, playlistItems,
   sermons, notes, savedVerses, userPreferences, devotionalBooks, devotionalChapters, bookProgress, bookHighlights,
-  livestreams, livestreamNotes, detectedVerses, detectedHymns,
+  livestreams, livestreamNotes, detectedVerses, detectedHymns, dailyDevotionals,
   type BibleVerse, type InsertBibleVerse, type Highlight, type InsertHighlight,
   type Hymn, type InsertHymn, type SavedHymn, type InsertSavedHymn,
   type Playlist, type InsertPlaylist, type PlaylistItem, type InsertPlaylistItem,
@@ -11,6 +11,7 @@ import {
   type BookProgress, type InsertBookProgress, type BookHighlight, type InsertBookHighlight,
   type Livestream, type InsertLivestream, type LivestreamNote, type InsertLivestreamNote,
   type DetectedVerse, type InsertDetectedVerse, type DetectedHymn, type InsertDetectedHymn,
+  type DailyDevotional, type InsertDailyDevotional,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, like, or, ilike, asc, desc, sql } from "drizzle-orm";
@@ -92,6 +93,9 @@ export interface IStorage {
   getDetectedVerses(livestreamId: number): Promise<DetectedVerse[]>;
   addDetectedHymn(hymn: InsertDetectedHymn): Promise<DetectedHymn>;
   getDetectedHymns(livestreamId: number): Promise<DetectedHymn[]>;
+  
+  getDailyDevotional(dayOfYear: number): Promise<DailyDevotional | undefined>;
+  insertDailyDevotional(devotional: InsertDailyDevotional): Promise<DailyDevotional>;
 }
 
 const CURATED_VERSES = [
@@ -596,6 +600,17 @@ export class DatabaseStorage implements IStorage {
     return db.select().from(detectedHymns)
       .where(eq(detectedHymns.livestreamId, livestreamId))
       .orderBy(asc(detectedHymns.timestampSeconds));
+  }
+
+  async getDailyDevotional(dayOfYear: number): Promise<DailyDevotional | undefined> {
+    const [devotional] = await db.select().from(dailyDevotionals)
+      .where(eq(dailyDevotionals.dayOfYear, dayOfYear));
+    return devotional;
+  }
+
+  async insertDailyDevotional(devotional: InsertDailyDevotional): Promise<DailyDevotional> {
+    const [newDevotional] = await db.insert(dailyDevotionals).values(devotional).returning();
+    return newDevotional;
   }
 }
 
