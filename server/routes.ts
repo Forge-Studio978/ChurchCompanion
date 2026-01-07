@@ -263,6 +263,184 @@ export async function registerRoutes(
     }
   });
 
+  app.get("/api/livestreams", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const streams = await storage.getLivestreams(userId);
+      res.json(streams);
+    } catch (error) {
+      console.error("Error getting livestreams:", error);
+      res.status(500).json({ message: "Failed to get livestreams" });
+    }
+  });
+
+  app.get("/api/livestreams/:id", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const id = parseInt(req.params.id);
+      const stream = await storage.getLivestream(id, userId);
+      if (!stream) {
+        return res.status(404).json({ message: "Livestream not found" });
+      }
+      res.json(stream);
+    } catch (error) {
+      console.error("Error getting livestream:", error);
+      res.status(500).json({ message: "Failed to get livestream" });
+    }
+  });
+
+  app.post("/api/livestreams", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const { title, description, sourceUrl, sourceType } = req.body;
+      const stream = await storage.createLivestream({
+        userId,
+        title,
+        description,
+        sourceUrl,
+        sourceType: sourceType || "youtube",
+      });
+      res.json(stream);
+    } catch (error) {
+      console.error("Error creating livestream:", error);
+      res.status(500).json({ message: "Failed to create livestream" });
+    }
+  });
+
+  app.patch("/api/livestreams/:id/position", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const id = parseInt(req.params.id);
+      const { position } = req.body;
+      await storage.updateLivestreamPosition(id, userId, position);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error updating position:", error);
+      res.status(500).json({ message: "Failed to update position" });
+    }
+  });
+
+  app.delete("/api/livestreams/:id", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const id = parseInt(req.params.id);
+      await storage.deleteLivestream(id, userId);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error deleting livestream:", error);
+      res.status(500).json({ message: "Failed to delete livestream" });
+    }
+  });
+
+  app.get("/api/livestreams/:id/notes", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const livestreamId = parseInt(req.params.id);
+      const notes = await storage.getLivestreamNotes(livestreamId, userId);
+      res.json(notes);
+    } catch (error) {
+      console.error("Error getting livestream notes:", error);
+      res.status(500).json({ message: "Failed to get notes" });
+    }
+  });
+
+  app.get("/api/livestream-notes", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const notes = await storage.getLivestreamNotesWithContext(userId);
+      res.json(notes);
+    } catch (error) {
+      console.error("Error getting all livestream notes:", error);
+      res.status(500).json({ message: "Failed to get notes" });
+    }
+  });
+
+  app.post("/api/livestream-notes", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const { livestreamId, timestampSeconds, content, bibleReference, hymnId } = req.body;
+      const note = await storage.createLivestreamNote({
+        userId,
+        livestreamId,
+        timestampSeconds: timestampSeconds || 0,
+        content,
+        bibleReference,
+        hymnId,
+      });
+      res.json(note);
+    } catch (error) {
+      console.error("Error creating livestream note:", error);
+      res.status(500).json({ message: "Failed to create note" });
+    }
+  });
+
+  app.delete("/api/livestream-notes/:id", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const id = parseInt(req.params.id);
+      await storage.deleteLivestreamNote(id, userId);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error deleting livestream note:", error);
+      res.status(500).json({ message: "Failed to delete note" });
+    }
+  });
+
+  app.get("/api/livestreams/:id/detected-verses", isAuthenticated, async (req: any, res) => {
+    try {
+      const livestreamId = parseInt(req.params.id);
+      const verses = await storage.getDetectedVerses(livestreamId);
+      res.json(verses);
+    } catch (error) {
+      console.error("Error getting detected verses:", error);
+      res.status(500).json({ message: "Failed to get detected verses" });
+    }
+  });
+
+  app.post("/api/livestreams/:id/detected-verses", isAuthenticated, async (req: any, res) => {
+    try {
+      const livestreamId = parseInt(req.params.id);
+      const { bibleReference, timestampSeconds } = req.body;
+      const verse = await storage.addDetectedVerse({
+        livestreamId,
+        bibleReference,
+        timestampSeconds,
+      });
+      res.json(verse);
+    } catch (error) {
+      console.error("Error adding detected verse:", error);
+      res.status(500).json({ message: "Failed to add detected verse" });
+    }
+  });
+
+  app.get("/api/livestreams/:id/detected-hymns", isAuthenticated, async (req: any, res) => {
+    try {
+      const livestreamId = parseInt(req.params.id);
+      const hymns = await storage.getDetectedHymns(livestreamId);
+      res.json(hymns);
+    } catch (error) {
+      console.error("Error getting detected hymns:", error);
+      res.status(500).json({ message: "Failed to get detected hymns" });
+    }
+  });
+
+  app.post("/api/livestreams/:id/detected-hymns", isAuthenticated, async (req: any, res) => {
+    try {
+      const livestreamId = parseInt(req.params.id);
+      const { hymnId, title, timestampSeconds } = req.body;
+      const hymn = await storage.addDetectedHymn({
+        livestreamId,
+        hymnId,
+        title,
+        timestampSeconds,
+      });
+      res.json(hymn);
+    } catch (error) {
+      console.error("Error adding detected hymn:", error);
+      res.status(500).json({ message: "Failed to add detected hymn" });
+    }
+  });
+
   app.get("/api/sermons", isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;

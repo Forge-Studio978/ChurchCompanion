@@ -1,0 +1,223 @@
+Build a web + mobile responsive feature called “Livestream Companion,” designed for the Christian Center app. This feature allows users to watch livestream church services, take timestamped notes, view automatically detected Bible references and hymn lyrics, and save all notes and highlights into a personal Library. This is a private study tool, not social media.
+
+-------------------------
+CORE PURPOSE
+-------------------------
+Help Christians stay engaged during livestreams by:
+• Viewing livestream video
+• Seeing referenced Bible verses
+• Following hymns being sung
+• Taking timestamped notes
+• Saving everything cleanly into their Library
+
+No chat.
+No comments.
+No public posting.
+Everything is private to the user.
+
+-------------------------
+USER FLOW
+-------------------------
+The user can:
+1. Add a livestream source
+2. Open the Livestream Companion
+3. Watch the livestream
+4. See Bible verses referenced during the sermon
+5. See hymn lyrics when songs are sung
+6. Take timestamped notes
+7. Return later to rewatch + review notes
+
+-------------------------
+SUPPORTED LIVESTREAM SOURCES
+-------------------------
+Accept external links:
+• YouTube Live
+• Vimeo
+• Embedded MP4
+• HLS streaming links
+
+Users add streams manually.
+No scraping logins or private content.
+
+-------------------------
+UI LAYOUT
+-------------------------
+Desktop:
+LEFT — Video Player
+RIGHT — Companion Panel with tabs:
+• Notes
+• Bible References
+• Hymns Display
+
+Mobile:
+TOP — Video Player
+BOTTOM — Companion Panel (swipe tabs)
+
+Fullscreen Mode:
+• Caption-style overlay for verses & lyrics
+
+-------------------------
+VIDEO PLAYER REQUIREMENTS
+-------------------------
+• Play / Pause
+• Seek bar
+• Timestamp display
+• Volume control
+• Support full screen
+
+-------------------------
+TIMESTAMPED NOTES
+-------------------------
+Users can take notes while watching.
+
+Each note stores:
+• Timestamp (HH:MM:SS)
+• Note text
+• Optional Bible verse link
+• Optional hymn link
+
+Saving Behavior:
+• Notes sync to Library
+• Clicking a note jumps the player to that timestamp
+
+Notes must be fully searchable in Library.
+
+-------------------------
+AUTO CONTENT DETECTION (MVP FRIENDLY)
+-------------------------
+Detect spoken Bible references like:
+“John chapter 3 verse 16”
+“Romans 8:28”
+
+Display the referenced passage in the Bible tab.
+
+Detect song titles where possible.
+If match exists in Hymn Database:
+• Show lyrics
+Otherwise:
+• Show transcription text
+
+If detection fails:
+• User can manually add verse or hymn
+
+-------------------------
+HYMN DISPLAY LOGIC
+-------------------------
+If hymn exists in database:
+• Show full lyrics
+• Show hymn title
+• Allow user to favorite it
+
+If hymn does not exist:
+• Show detected lyrics transcription
+
+No copyrighted music streaming required.
+
+-------------------------
+LIBRARY INTEGRATION
+-------------------------
+Every note is saved to the user’s Library inside
+“Livestream Notes”
+
+Stored data includes:
+• Livestream title
+• Date
+• Timestamped notes
+• Linked Bible verses
+• Linked hymns
+• Playback resume location
+
+Clicking:
+• Verse → opens Bible to that passage
+• Hymn → opens hymn view
+• Timestamp → jumps video
+
+-------------------------
+RENAMING REQUIREMENT
+-------------------------
+Anywhere the word “Sermons” appears
+Replace with:
+“Livestream Companion”
+
+-------------------------
+PERMISSIONS & PRIVACY
+-------------------------
+• All user content is private
+• No public sharing
+• GDPR-friendly storage
+• No user tracking
+
+-------------------------
+DATABASE MODELS
+-------------------------
+
+Users
+• id
+• name
+• email
+• password_hash
+
+Livestreams
+• id
+• user_id
+• title
+• source_url
+• created_at
+• last_view_position
+
+LivestreamNotes
+• id
+• livestream_id
+• timestamp_seconds
+• content
+• bible_reference (nullable)
+• hymn_id (nullable)
+• created_at
+
+DetectedVerses
+• id
+• livestream_id
+• bible_reference
+• timestamp_seconds
+
+DetectedHymns
+• id
+• livestream_id
+• hymn_id (nullable)
+• title (fallback)
+• timestamp_seconds
+
+Hymns
+• id
+• title
+• lyrics
+• category
+• is_public_domain
+
+-------------------------
+TECH REQUIREMENTS
+-------------------------
+• Mobile-first UI
+• React / React Native preferred
+• Minimalist spiritual aesthetic
+• Light + dark mode
+• Clean typography
+• No distractions
+
+-------------------------
+SEARCH & FILTER
+-------------------------
+Users may search in notes by:
+• Text
+• Bible passage
+• Hymn title
+
+-------------------------
+GOAL
+-------------------------
+Create the best companion tool for livestream worship:
+• Engaging
+• Organized
+• Peaceful
+• Simple
+• Private

@@ -1,6 +1,7 @@
 import {
   bibleVerses, highlights, hymns, savedHymns, playlists, playlistItems,
   sermons, notes, savedVerses, userPreferences, devotionalBooks, devotionalChapters, bookProgress, bookHighlights,
+  livestreams, livestreamNotes, detectedVerses, detectedHymns,
   type BibleVerse, type InsertBibleVerse, type Highlight, type InsertHighlight,
   type Hymn, type InsertHymn, type SavedHymn, type InsertSavedHymn,
   type Playlist, type InsertPlaylist, type PlaylistItem, type InsertPlaylistItem,
@@ -8,6 +9,8 @@ import {
   type SavedVerse, type InsertSavedVerse, type UserPreferences, type InsertUserPreferences,
   type DevotionalBook, type InsertDevotionalBook, type DevotionalChapter, type InsertDevotionalChapter,
   type BookProgress, type InsertBookProgress, type BookHighlight, type InsertBookHighlight,
+  type Livestream, type InsertLivestream, type LivestreamNote, type InsertLivestreamNote,
+  type DetectedVerse, type InsertDetectedVerse, type DetectedHymn, type InsertDetectedHymn,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, like, or, ilike, asc, desc } from "drizzle-orm";
@@ -73,6 +76,22 @@ export interface IStorage {
   getBookHighlights(userId: string, chapterId: number): Promise<BookHighlight[]>;
   createBookHighlight(highlight: InsertBookHighlight): Promise<BookHighlight>;
   deleteBookHighlight(id: number, userId: string): Promise<void>;
+  
+  getLivestreams(userId: string): Promise<Livestream[]>;
+  getLivestream(id: number, userId: string): Promise<Livestream | undefined>;
+  createLivestream(livestream: InsertLivestream): Promise<Livestream>;
+  updateLivestreamPosition(id: number, userId: string, position: number): Promise<void>;
+  deleteLivestream(id: number, userId: string): Promise<void>;
+  
+  getLivestreamNotes(livestreamId: number, userId: string): Promise<LivestreamNote[]>;
+  getLivestreamNotesWithContext(userId: string): Promise<(LivestreamNote & { livestream: Livestream })[]>;
+  createLivestreamNote(note: InsertLivestreamNote): Promise<LivestreamNote>;
+  deleteLivestreamNote(id: number, userId: string): Promise<void>;
+  
+  addDetectedVerse(verse: InsertDetectedVerse): Promise<DetectedVerse>;
+  getDetectedVerses(livestreamId: number): Promise<DetectedVerse[]>;
+  addDetectedHymn(hymn: InsertDetectedHymn): Promise<DetectedHymn>;
+  getDetectedHymns(livestreamId: number): Promise<DetectedHymn[]>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -421,6 +440,82 @@ export class DatabaseStorage implements IStorage {
 
   async deleteBookHighlight(id: number, userId: string): Promise<void> {
     await db.delete(bookHighlights).where(and(eq(bookHighlights.id, id), eq(bookHighlights.userId, userId)));
+  }
+
+  async getLivestreams(userId: string): Promise<Livestream[]> {
+    return db.select().from(livestreams)
+      .where(eq(livestreams.userId, userId))
+      .orderBy(desc(livestreams.createdAt));
+  }
+
+  async getLivestream(id: number, userId: string): Promise<Livestream | undefined> {
+    const [livestream] = await db.select().from(livestreams)
+      .where(and(eq(livestreams.id, id), eq(livestreams.userId, userId)));
+    return livestream;
+  }
+
+  async createLivestream(livestream: InsertLivestream): Promise<Livestream> {
+    const [newLivestream] = await db.insert(livestreams).values(livestream).returning();
+    return newLivestream;
+  }
+
+  async updateLivestreamPosition(id: number, userId: string, position: number): Promise<void> {
+    await db.update(livestreams)
+      .set({ lastViewPosition: position })
+      .where(and(eq(livestreams.id, id), eq(livestreams.userId, userId)));
+  }
+
+  async deleteLivestream(id: number, userId: string): Promise<void> {
+    await db.delete(livestreamNotes).where(eq(livestreamNotes.livestreamId, id));
+    await db.delete(detectedVerses).where(eq(detectedVerses.livestreamId, id));
+    await db.delete(detectedHymns).where(eq(detectedHymns.livestreamId, id));
+    await db.delete(livestreams).where(and(eq(livestreams.id, id), eq(livestreams.userId, userId)));
+  }
+
+  async getLivestreamNotes(livestreamId: number, userId: string): Promise<LivestreamNote[]> {
+    return db.select().from(livestreamNotes)
+      .where(and(eq(livestreamNotes.livestreamId, livestreamId), eq(livestreamNotes.userId, userId)))
+      .orderBy(asc(livestreamNotes.timestampSeconds));
+  }
+
+  async getLivestreamNotesWithContext(userId: string): Promise<(LivestreamNote & { livestream: Livestream })[]> {
+    const result = await db.select()
+      .from(livestreamNotes)
+      .innerJoin(livestreams, eq(livestreamNotes.livestreamId, livestreams.id))
+      .where(eq(livestreamNotes.userId, userId))
+      .orderBy(desc(livestreamNotes.createdAt));
+    return result.map(r => ({ ...r.livestream_notes, livestream: r.livestreams }));
+  }
+
+  async createLivestreamNote(note: InsertLivestreamNote): Promise<LivestreamNote> {
+    const [newNote] = await db.insert(livestreamNotes).values(note).returning();
+    return newNote;
+  }
+
+  async deleteLivestreamNote(id: number, userId: string): Promise<void> {
+    await db.delete(livestreamNotes).where(and(eq(livestreamNotes.id, id), eq(livestreamNotes.userId, userId)));
+  }
+
+  async addDetectedVerse(verse: InsertDetectedVerse): Promise<DetectedVerse> {
+    const [newVerse] = await db.insert(detectedVerses).values(verse).returning();
+    return newVerse;
+  }
+
+  async getDetectedVerses(livestreamId: number): Promise<DetectedVerse[]> {
+    return db.select().from(detectedVerses)
+      .where(eq(detectedVerses.livestreamId, livestreamId))
+      .orderBy(asc(detectedVerses.timestampSeconds));
+  }
+
+  async addDetectedHymn(hymn: InsertDetectedHymn): Promise<DetectedHymn> {
+    const [newHymn] = await db.insert(detectedHymns).values(hymn).returning();
+    return newHymn;
+  }
+
+  async getDetectedHymns(livestreamId: number): Promise<DetectedHymn[]> {
+    return db.select().from(detectedHymns)
+      .where(eq(detectedHymns.livestreamId, livestreamId))
+      .orderBy(asc(detectedHymns.timestampSeconds));
   }
 }
 

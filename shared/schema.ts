@@ -55,6 +55,43 @@ export const playlistItems = pgTable("playlist_items", {
   orderIndex: integer("order_index").notNull().default(0),
 });
 
+export const livestreams = pgTable("livestreams", {
+  id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+  userId: varchar("user_id").notNull(),
+  title: varchar("title", { length: 255 }).notNull(),
+  description: text("description"),
+  sourceUrl: text("source_url").notNull(),
+  sourceType: varchar("source_type", { length: 20 }).default("youtube"),
+  lastViewPosition: integer("last_view_position").default(0),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const livestreamNotes = pgTable("livestream_notes", {
+  id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+  userId: varchar("user_id").notNull(),
+  livestreamId: integer("livestream_id").notNull(),
+  timestampSeconds: integer("timestamp_seconds").notNull().default(0),
+  content: text("content").notNull(),
+  bibleReference: varchar("bible_reference", { length: 100 }),
+  hymnId: integer("hymn_id"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const detectedVerses = pgTable("detected_verses", {
+  id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+  livestreamId: integer("livestream_id").notNull(),
+  bibleReference: varchar("bible_reference", { length: 100 }).notNull(),
+  timestampSeconds: integer("timestamp_seconds").notNull(),
+});
+
+export const detectedHymns = pgTable("detected_hymns", {
+  id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+  livestreamId: integer("livestream_id").notNull(),
+  hymnId: integer("hymn_id"),
+  title: varchar("title", { length: 255 }),
+  timestampSeconds: integer("timestamp_seconds").notNull(),
+});
+
 export const sermons = pgTable("sermons", {
   id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
   userId: varchar("user_id").notNull(),
@@ -178,6 +215,10 @@ export const insertHymnSchema = createInsertSchema(hymns).omit({ id: true });
 export const insertSavedHymnSchema = createInsertSchema(savedHymns).omit({ id: true, createdAt: true });
 export const insertPlaylistSchema = createInsertSchema(playlists).omit({ id: true, createdAt: true });
 export const insertPlaylistItemSchema = createInsertSchema(playlistItems).omit({ id: true });
+export const insertLivestreamSchema = createInsertSchema(livestreams).omit({ id: true, createdAt: true });
+export const insertLivestreamNoteSchema = createInsertSchema(livestreamNotes).omit({ id: true, createdAt: true });
+export const insertDetectedVerseSchema = createInsertSchema(detectedVerses).omit({ id: true });
+export const insertDetectedHymnSchema = createInsertSchema(detectedHymns).omit({ id: true });
 export const insertSermonSchema = createInsertSchema(sermons).omit({ id: true, createdAt: true });
 export const insertNoteSchema = createInsertSchema(notes).omit({ id: true, createdAt: true });
 export const insertSavedVerseSchema = createInsertSchema(savedVerses).omit({ id: true, createdAt: true });
@@ -199,6 +240,14 @@ export type Playlist = typeof playlists.$inferSelect;
 export type InsertPlaylist = z.infer<typeof insertPlaylistSchema>;
 export type PlaylistItem = typeof playlistItems.$inferSelect;
 export type InsertPlaylistItem = z.infer<typeof insertPlaylistItemSchema>;
+export type Livestream = typeof livestreams.$inferSelect;
+export type InsertLivestream = z.infer<typeof insertLivestreamSchema>;
+export type LivestreamNote = typeof livestreamNotes.$inferSelect;
+export type InsertLivestreamNote = z.infer<typeof insertLivestreamNoteSchema>;
+export type DetectedVerse = typeof detectedVerses.$inferSelect;
+export type InsertDetectedVerse = z.infer<typeof insertDetectedVerseSchema>;
+export type DetectedHymn = typeof detectedHymns.$inferSelect;
+export type InsertDetectedHymn = z.infer<typeof insertDetectedHymnSchema>;
 export type Sermon = typeof sermons.$inferSelect;
 export type InsertSermon = z.infer<typeof insertSermonSchema>;
 export type Note = typeof notes.$inferSelect;
