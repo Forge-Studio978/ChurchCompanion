@@ -37,10 +37,11 @@ import type { Hymn, SavedHymn, Playlist } from "@shared/schema";
 
 const HYMNS_PER_PAGE = 20;
 const ALPHABET = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("");
-const LANGUAGES = [
-  { code: "en", label: "English" },
-  { code: "fr", label: "Francais" },
-];
+const LANGUAGE_LABELS: Record<string, string> = {
+  en: "English",
+  fr: "Francais",
+  es: "Espanol",
+};
 
 export default function Hymns() {
   const { isAuthenticated } = useAuth();
@@ -73,8 +74,17 @@ export default function Hymns() {
     enabled: isAuthenticated,
   });
 
+  const { data: availableLanguages = ["en"] } = useQuery<string[]>({
+    queryKey: ["/api/hymns/languages"],
+  });
+
   const { data: tags = [] } = useQuery<string[]>({
-    queryKey: ["/api/hymns/tags"],
+    queryKey: ["/api/hymns/tags", selectedLanguage],
+    queryFn: async () => {
+      const res = await fetch(`/api/hymns/tags?language=${selectedLanguage}`);
+      if (!res.ok) throw new Error("Failed to fetch tags");
+      return res.json();
+    },
   });
 
   const saveMutation = useMutation({
@@ -181,9 +191,9 @@ export default function Hymns() {
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                {LANGUAGES.map((lang) => (
-                  <SelectItem key={lang.code} value={lang.code}>
-                    {lang.label}
+                {availableLanguages.map((code) => (
+                  <SelectItem key={code} value={code}>
+                    {LANGUAGE_LABELS[code] || code.toUpperCase()}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -215,29 +225,27 @@ export default function Hymns() {
           </div>
 
           {tags.length > 0 && (
-            <ScrollArea className="w-full">
-              <div className="flex gap-2 pb-2">
+            <div className="flex flex-wrap gap-2">
+              <Badge
+                variant={selectedTag === null ? "default" : "outline"}
+                className="cursor-pointer"
+                onClick={() => setSelectedTag(null)}
+                data-testid="tag-all"
+              >
+                All
+              </Badge>
+              {tags.map((tag) => (
                 <Badge
-                  variant={selectedTag === null ? "default" : "outline"}
-                  className="cursor-pointer shrink-0"
-                  onClick={() => setSelectedTag(null)}
-                  data-testid="tag-all"
+                  key={tag}
+                  variant={selectedTag === tag ? "default" : "outline"}
+                  className="cursor-pointer capitalize"
+                  onClick={() => setSelectedTag(tag)}
+                  data-testid={`tag-${tag}`}
                 >
-                  All
+                  {tag.charAt(0).toUpperCase() + tag.slice(1).toLowerCase()}
                 </Badge>
-                {tags.map((tag) => (
-                  <Badge
-                    key={tag}
-                    variant={selectedTag === tag ? "default" : "outline"}
-                    className="cursor-pointer shrink-0 capitalize"
-                    onClick={() => setSelectedTag(tag)}
-                    data-testid={`tag-${tag}`}
-                  >
-                    {tag.charAt(0).toUpperCase() + tag.slice(1).toLowerCase()}
-                  </Badge>
-                ))}
-              </div>
-            </ScrollArea>
+              ))}
+            </div>
           )}
         </div>
 

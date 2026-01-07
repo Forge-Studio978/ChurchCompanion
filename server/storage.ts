@@ -32,7 +32,8 @@ export interface IStorage {
   
   getHymns(language?: string): Promise<Hymn[]>;
   getHymn(id: number): Promise<Hymn | undefined>;
-  getHymnTags(): Promise<string[]>;
+  getHymnTags(language?: string): Promise<string[]>;
+  getHymnLanguages(): Promise<string[]>;
   insertHymn(hymn: InsertHymn): Promise<Hymn>;
   
   getSavedHymns(userId: string): Promise<SavedHymn[]>;
@@ -271,13 +272,21 @@ export class DatabaseStorage implements IStorage {
     return hymn;
   }
 
-  async getHymnTags(): Promise<string[]> {
-    const result = await db.select({ tags: hymns.tags }).from(hymns);
+  async getHymnTags(language?: string): Promise<string[]> {
+    const query = language 
+      ? db.select({ tags: hymns.tags }).from(hymns).where(eq(hymns.language, language))
+      : db.select({ tags: hymns.tags }).from(hymns);
+    const result = await query;
     const allTags = new Set<string>();
     result.forEach(r => {
       if (r.tags) r.tags.forEach(t => allTags.add(t));
     });
     return Array.from(allTags).sort();
+  }
+
+  async getHymnLanguages(): Promise<string[]> {
+    const result = await db.selectDistinct({ language: hymns.language }).from(hymns);
+    return result.map(r => r.language).sort();
   }
 
   async insertHymn(hymn: InsertHymn): Promise<Hymn> {

@@ -168,9 +168,20 @@ export async function registerRoutes(
     }
   });
 
+  app.get("/api/hymns/languages", async (req, res) => {
+    try {
+      const languages = await storage.getHymnLanguages();
+      res.json(languages);
+    } catch (error) {
+      console.error("Error getting hymn languages:", error);
+      res.status(500).json({ message: "Failed to get languages" });
+    }
+  });
+
   app.get("/api/hymns/tags", async (req, res) => {
     try {
-      const tags = await storage.getHymnTags();
+      const language = req.query.language as string | undefined;
+      const tags = await storage.getHymnTags(language);
       res.json(tags);
     } catch (error) {
       console.error("Error getting hymn tags:", error);
