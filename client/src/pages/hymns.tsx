@@ -24,12 +24,23 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useAuth } from "@/hooks/use-auth";
-import { Search, Heart, Music, Plus, ListMusic, MoreVertical, ChevronLeft, ChevronRight } from "lucide-react";
+import { Search, Heart, Music, Plus, ListMusic, MoreVertical, ChevronLeft, ChevronRight, Globe } from "lucide-react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 import type { Hymn, SavedHymn, Playlist } from "@shared/schema";
 
 const HYMNS_PER_PAGE = 20;
 const ALPHABET = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("");
+const LANGUAGES = [
+  { code: "en", label: "English" },
+  { code: "fr", label: "Francais" },
+];
 
 export default function Hymns() {
   const { isAuthenticated } = useAuth();
@@ -41,9 +52,15 @@ export default function Hymns() {
   const [currentPage, setCurrentPage] = useState(1);
   const [createPlaylistOpen, setCreatePlaylistOpen] = useState(false);
   const [newPlaylistTitle, setNewPlaylistTitle] = useState("");
+  const [selectedLanguage, setSelectedLanguage] = useState("en");
 
   const { data: hymns = [], isLoading } = useQuery<Hymn[]>({
-    queryKey: ["/api/hymns", searchQuery, selectedTag],
+    queryKey: ["/api/hymns", selectedLanguage],
+    queryFn: async () => {
+      const res = await fetch(`/api/hymns?language=${selectedLanguage}`);
+      if (!res.ok) throw new Error("Failed to fetch hymns");
+      return res.json();
+    },
   });
 
   const { data: savedHymns = [] } = useQuery<SavedHymn[]>({
@@ -152,6 +169,26 @@ export default function Hymns() {
         <div className="text-center mb-6">
           <h1 className="font-serif text-2xl sm:text-3xl font-semibold mb-2">Hymnal Library</h1>
           <p className="text-muted-foreground">Browse and search hymns</p>
+          <div className="flex items-center justify-center mt-3">
+            <Select value={selectedLanguage} onValueChange={(val) => {
+              setSelectedLanguage(val);
+              setSelectedTag(null);
+              setSelectedLetter(null);
+              setCurrentPage(1);
+            }}>
+              <SelectTrigger className="w-[140px]" data-testid="select-hymn-language">
+                <Globe className="h-4 w-4 mr-2" />
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {LANGUAGES.map((lang) => (
+                  <SelectItem key={lang.code} value={lang.code}>
+                    {lang.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
         </div>
         {isAuthenticated && (
           <Button 
