@@ -231,8 +231,8 @@ export default function Auth() {
               </form>
 
               <Button
-                variant="link"
-                className="w-full"
+                variant="ghost"
+                className="w-full text-muted-foreground"
                 onClick={() => setResetMode(true)}
                 data-testid="button-forgot-password"
               >
