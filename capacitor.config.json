@@ -1,0 +1,10 @@
+{
+  "appId": "com.horizontechnologies.churchcampanion",
+  "appName": "Church Companion",
+  "webDir": "dist",
+
+  "server": {
+    "url": "https://church-companion.replit.app/",
+  "cleartext": true
+  }
+}
